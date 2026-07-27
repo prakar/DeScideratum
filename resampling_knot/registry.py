@@ -1,11 +1,4 @@
-"""
-Toy stand-in for the Custodian's resolve()/record_invocation() path.
-This is what makes the demo actually test "citation is invocation"
-mechanically, rather than just letting node B `import` node A the
-normal Python way -- every cross-node call here goes through a
-CID lookup and a depth check, exactly like a real cross-document
-invocation would over IPFS + the Custodian in the full system.
-"""
+"""Same content-addressed invocation registry pattern as the resampling knot."""
 from typing import Callable, Dict
 
 MAX_INVOCATION_DEPTH = 3
@@ -29,9 +22,7 @@ class Registry:
                 f"invocation chain exceeded max depth {MAX_INVOCATION_DEPTH} at {fn_cid}"
             )
         if fn_cid not in self._functions:
-            raise KeyError(f"no function registered under CID {fn_cid} -- "
-                            f"in the real system this is where a CORS-gated "
-                            f"IPFS fetch would happen")
+            raise KeyError(f"no function registered under CID {fn_cid}")
         self._call_log.append((depth, fn_cid))
         fn = self._functions[fn_cid]
         return fn(payload)

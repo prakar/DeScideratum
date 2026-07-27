@@ -1,1 +1,5 @@
 resampling_knot/.DS_Store
+resampling_knot/__pycache__/citation_records.cpython-312.pyc
+resampling_knot/__pycache__/registry.cpython-312.pyc
+resampling_knot/functions/__pycache__/benjamini_hochberg_1995.cpython-312.pyc
+resampling_knot/functions/__pycache__/storey_2002_qvalue.cpython-312.pyc

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resampling Knot — Citation as Invocation</title>
+<style>
+  :root {
+    --paper: #f7f5f0; --ink: #1c2430; --ink-soft: #4a5468; --rule: #d8d3c6;
+    --amber: #b8791f; --amber-soft: #f0e2c8; --green: #3f7a52;
+    --mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+    --serif: "Source Serif 4", "Georgia", serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); line-height: 1.55; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 24px 120px; }
+
+  header { border-bottom: 2px solid var(--ink); padding-bottom: 20px; margin-bottom: 32px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber); margin-bottom: 8px; }
+  h1 { font-size: 30px; margin: 0 0 8px; font-weight: 600; }
+  .sub { color: var(--ink-soft); font-size: 15px; max-width: 62ch; }
+
+  .graph { display: flex; align-items: stretch; gap: 0; margin: 32px 0 8px; background: #fff; border: 1px solid var(--rule); border-radius: 6px; padding: 28px 20px; }
+  .gnode { flex: 1; text-align: center; padding: 14px 10px; border-radius: 5px; border: 2px solid var(--rule); background: var(--paper); transition: all 0.25s ease; position: relative; }
+  .gnode.active { border-color: var(--amber); background: var(--amber-soft); box-shadow: 0 0 0 4px rgba(184,121,31,0.15); }
+  .gnode .letter { font-family: var(--mono); font-weight: 700; color: var(--amber); font-size: 13px; }
+  .gnode .name { font-weight: 600; font-size: 13.5px; margin-top: 4px; }
+  .gnode .year { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); }
+  .garrow { flex: 0 0 44px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--ink-soft); }
+  .garrow.active { color: var(--amber); }
+  .graph-caption { font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft); text-align: center; margin-bottom: 20px; }
+
+  /* --- tap-friendly term system --- */
+  .term { border-bottom: 1.5px dotted var(--amber); cursor: pointer; position: relative; font-weight: 600; }
+  .term:hover { background: var(--amber-soft); }
+  .term-pop {
+    display: none; position: absolute; left: 50%; top: 130%; transform: translateX(-50%);
+    background: var(--ink); color: var(--paper); font-family: var(--serif); font-size: 13px;
+    padding: 10px 13px; border-radius: 5px; width: 250px; line-height: 1.45; z-index: 50;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3); text-align: left; font-weight: 400;
+  }
+  .term-pop::before { content: ""; position: absolute; left: 50%; top: -6px; transform: translateX(-50%); border: 6px solid transparent; border-bottom-color: var(--ink); }
+  .term-pop.open { display: block; }
+  .term-pop .close-hint { display: block; margin-top: 6px; font-family: var(--mono); font-size: 10px; color: #9aa5b8; }
+
+  .glossary-toggle {
+    font-family: var(--mono); font-size: 12px; color: var(--amber); background: none; border: 1px solid var(--amber);
+    border-radius: 3px; padding: 7px 14px; cursor: pointer; margin-bottom: 24px;
+  }
+  .glossary-panel { display: none; background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 20px 24px; margin-bottom: 24px; }
+  .glossary-panel.open { display: block; }
+  .glossary-item { padding: 10px 0; border-bottom: 1px solid var(--rule); }
+  .glossary-item:last-child { border-bottom: none; }
+  .glossary-item b { font-family: var(--mono); color: var(--amber); font-size: 13.5px; }
+  .glossary-item div { font-size: 14px; margin-top: 3px; color: var(--ink-soft); }
+
+  .panel { background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 24px; margin-bottom: 24px; }
+  .panel h2 { font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin: 0 0 14px; }
+  textarea { width: 100%; font-family: var(--mono); font-size: 14px; border: 1px solid var(--rule); border-radius: 3px; padding: 10px 12px; background: var(--paper); color: var(--ink); resize: vertical; min-height: 44px; }
+  .row { display: flex; gap: 16px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+  button { font-family: var(--mono); font-size: 13px; font-weight: 600; background: var(--ink); color: var(--paper); border: none; padding: 11px 22px; border-radius: 3px; cursor: pointer; letter-spacing: 0.02em; }
+  button:disabled { background: #9aa0ab; cursor: wait; }
+  .status { font-family: var(--mono); font-size: 12.5px; color: var(--ink-soft); }
+  .status.ready::before { content: "● "; color: var(--green); }
+  .status.loading::before { content: "○ "; color: var(--amber); }
+
+  #results { display: none; }
+  .narrative { background: var(--amber-soft); border-left: 3px solid var(--amber); border-radius: 0 4px 4px 0; padding: 16px 20px; font-size: 15px; margin-bottom: 24px; }
+  .narrative p { margin: 0 0 10px; }
+  .narrative p:last-child { margin-bottom: 0; }
+
+  .result-node { padding: 16px 0; border-bottom: 1px solid var(--rule); }
+  .result-node:last-child { border-bottom: none; }
+  .result-label { font-family: var(--mono); font-size: 12px; color: var(--amber); margin-bottom: 6px; }
+  .result-line { font-family: var(--mono); font-size: 13.5px; color: var(--ink); }
+  .result-why { font-size: 13.5px; color: var(--ink-soft); margin-top: 6px; max-width: 68ch; }
+
+  .compare-row { display: grid; grid-template-columns: 150px 1fr; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .compare-label { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); text-align: right; }
+  .compare-track { position: relative; height: 26px; background: var(--paper); border: 1px solid var(--rule); border-radius: 3px; }
+  .compare-bar { position: absolute; top: 3px; bottom: 3px; border-radius: 2px; }
+  .compare-bar.naive { background: #c9c2ae; }
+  .compare-bar.bca { background: #d9ab5f; }
+  .compare-bar.calibrated { background: var(--amber); }
+  .compare-note { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); margin-top: 4px; margin-bottom: 14px; margin-left: 162px; }
+
+  .ledger-intro { font-size: 14px; color: var(--ink-soft); margin-bottom: 10px; }
+  .ledger { background: var(--ink); color: var(--amber-soft); font-family: var(--mono); font-size: 12.5px; padding: 16px 18px; border-radius: 3px; margin-top: 4px; white-space: pre-wrap; }
+  .ledger .dim { color: #8b93a3; }
+  .ledger-key { font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft); margin-top: 8px; line-height: 1.6; }
+  .ledger-key b { color: var(--ink); }
+
+  .fine { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--rule); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Citation-as-Invocation · Demo Knot 1 of 4</div>
+    <h1>The Resampling Knot</h1>
+    <div class="sub" id="subIntro">Three papers, forty years apart, cited into each other as live function calls — not footnotes. Running in this tab. Nothing you type below leaves your browser.</div>
+  </header>
+
+  <button class="glossary-toggle" id="glossaryBtn">Show full glossary (every term on this page, defined)</button>
+  <div class="glossary-panel" id="glossaryPanel"></div>
+
+  <div class="graph" id="graph">
+    <div class="gnode" id="node-a"><div class="letter">A</div><div class="name">Efron</div><div class="year">1979</div></div>
+    <div class="garrow" id="arrow-ab">→</div>
+    <div class="gnode" id="node-b"><div class="letter">B</div><div class="name">Efron &amp; Tibshirani</div><div class="year">1993</div></div>
+    <div class="garrow" id="arrow-bc">→</div>
+    <div class="gnode" id="node-c"><div class="letter">C</div><div class="name">Davison &amp; Hinkley</div><div class="year">1997</div></div>
+  </div>
+  <div class="graph-caption">an arrow lighting up means that node's code just called the previous node's code — not a claim, an event</div>
+
+  <div class="panel">
+    <h2>Your data</h2>
+    <textarea id="dataInput" rows="2">12.1, 14.3, 11.8, 15.9, 13.2, 10.7, 16.4, 12.9, 14.8, 11.2, 13.6, 15.1</textarea>
+    <div class="row">
+      <button id="runBtn" disabled>Loading Python runtime…</button>
+      <span class="status loading" id="statusText">fetching Pyodide</span>
+    </div>
+  </div>
+
+  <div class="panel" id="results">
+    <h2>What just happened, in plain language</h2>
+    <div class="narrative" id="narrative"></div>
+
+    <h2>How the estimate narrowed or widened at each step</h2>
+    <div id="compare"></div>
+
+    <h2>The technical result</h2>
+    <div id="resultBody"></div>
+
+    <h2 style="margin-top:22px">Invocation log — the receipt</h2>
+    <div class="ledger-intro" id="ledgerIntro"></div>
+    <div class="ledger" id="ledger"></div>
+    <div class="ledger-key" id="ledgerKey"></div>
+  </div>
+
+  <div class="fine">
+    No server received your data at any point. Open devtools → Network while running to confirm — the only fetches are the one-time Pyodide runtime and package files. Source for the three node functions is inline in this page's &lt;script&gt; block, inspectable via "view source."
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
+<script>
+// ---- single source of truth for every definable term on this page ----
+const TERMS = {
+  bootstrap: {
+    label: "bootstrap",
+    def: "A way to estimate how much an average (or other statistic) might vary, by repeatedly re-drawing random samples FROM YOUR OWN DATA, with replacement, instead of assuming a textbook distribution shape."
+  },
+  resample: {
+    label: "resample",
+    def: "One simulated \\"what if I'd drawn a different sample\\": pick data points at random from your own data (the same point can be picked more than once), the same size as your original sample."
+  },
+  se: {
+    label: "SE",
+    def: "Standard error — the estimated typical size of the gap between your sample's average and the true average you'd get if you could measure the entire population."
+  },
+  ci: {
+    label: "CI",
+    def: "Confidence interval — a range that's meant to contain the true value most of the time (95%, here) if you repeated the whole experiment many times. Not a claim about this one specific interval."
+  },
+  bca: {
+    label: "BCa",
+    def: "Bias-Corrected and accelerated interval. Takes a plain bootstrap's spread of resampled averages and nudges its edges to fix two known imperfections: a center-of-mass shift (bias) and an asymmetry in how the uncertainty behaves (acceleration)."
+  },
+  z0: {
+    label: "z₀ (bias correction)",
+    def: "How far the center of the resampled averages drifted from your original average, measured on the normal-distribution scale. Near 0 = little drift, little correction needed."
+  },
+  accel: {
+    label: "a (acceleration)",
+    def: "Whether the amount of uncertainty itself changes depending on the true value — i.e. whether the wobble is lopsided rather than symmetric. Computed via the jackknife (see below). Near 0 = fairly symmetric."
+  },
+  jackknife: {
+    label: "jackknife",
+    def: "A different resampling trick: leave exactly one data point out, recompute the average, put it back, repeat for every point in turn. Used here only to estimate the acceleration term."
+  },
+  calibrated: {
+    label: "calibrated",
+    def: "Adjusted using an extra layer of testing — here, by re-running the entire BCa procedure on many alternate resamples of the data, to see how much BCa's own interval edges jump around, and widening the final interval accordingly."
+  },
+  point_estimate: {
+    label: "point estimate",
+    def: "Your single best-guess number — here, just the plain average of the data you entered — before any uncertainty range is attached to it."
+  },
+  fn_cid: {
+    label: "fn_cid",
+    def: "A stand-in ID for each node's function — in the full platform this would be a hash of the function's actual code, so citing it means citing an exact, frozen, never-silently-changed computation."
+  },
+  depth: {
+    label: "depth",
+    def: "How many citation-hops deep a call is. depth=0 is a direct call you triggered; depth=1 is a call made BY that call (a citation being followed); depth=2 is a citation of a citation."
+  },
+  invoked: {
+    label: "invoked Nx",
+    def: "How many times that specific node's code actually ran during this one click — not a diagram guess, a real count logged as it happened."
+  },
+};
+
+function term(key, textOverride) {
+  const t = TERMS[key];
+  const text = textOverride || t.label;
+  return `<span class="term" data-term="${key}" onclick="toggleTerm(event, this)">${text}<span class="term-pop" id="pop-${Math.random().toString(36).slice(2)}"></span></span>`;
+}
+
+function toggleTerm(evt, el) {
+  evt.stopPropagation();
+  const key = el.getAttribute('data-term');
+  const pop = el.querySelector('.term-pop');
+  const alreadyOpen = pop.classList.contains('open');
+  document.querySelectorAll('.term-pop.open').forEach(p => p.classList.remove('open'));
+  if (!alreadyOpen) {
+    pop.innerHTML = `${TERMS[key].def}<span class="close-hint">tap anywhere to close</span>`;
+    pop.classList.add('open');
+  }
+}
+document.addEventListener('click', () => {
+  document.querySelectorAll('.term-pop.open').forEach(p => p.classList.remove('open'));
+});
+
+function renderGlossary() {
+  const panel = document.getElementById('glossaryPanel');
+  panel.innerHTML = Object.entries(TERMS).map(([key, t]) => `
+    <div class="glossary-item"><b>${t.label}</b><div>${t.def}</div></div>
+  `).join('');
+}
+renderGlossary();
+document.getElementById('glossaryBtn').addEventListener('click', () => {
+  const panel = document.getElementById('glossaryPanel');
+  panel.classList.toggle('open');
+});
+
+// intro sentence now defines "bootstrap" and "CI" the very first time they'd be needed
+document.getElementById('subIntro').innerHTML =
+  `Three papers, forty years apart, cited into each other as live function calls — not footnotes. ` +
+  `All three build on the ${term('bootstrap')} method for estimating a ${term('ci')} around an average. ` +
+  `Running in this tab. Nothing you type below leaves your browser.`;
+
+const PY_SOURCE = `
+import random, math, json
+
+class Registry:
+    def __init__(self):
+        self._fns = {}
+        self._log = []
+    def register(self, cid, fn):
+        self._fns[cid] = fn
+    def invoke(self, cid, payload, depth=0):
+        if depth > 3:
+            raise Exception(f"exceeded depth 3 at {cid}")
+        self._log.append((depth, cid))
+        return self._fns[cid](payload, depth)
+    def call_log(self):
+        return list(self._log)
+
+REGISTRY = Registry()
+A_CID = "bafy_efron1979_bootstrap_se_v1"
+B_CID = "bafy_efron_tibshirani_1993_bca_v1"
+C_CID = "bafy_davison_hinkley_1997_double_bootstrap_v1"
+
+def bootstrap_se(payload, depth=0):
+    data = payload["data"]; n = len(data)
+    if n < 3: raise ValueError("need at least 3 observations")
+    n_resamples = payload.get("n_resamples", 5000)
+    seed = payload.get("seed", 0)
+    rng = random.Random(seed)
+    point_estimate = sum(data) / n
+    means = []
+    for _ in range(n_resamples):
+        means.append(sum(data[rng.randrange(n)] for _ in range(n)) / n)
+    m = sum(means) / len(means)
+    var = sum((x - m) ** 2 for x in means) / (len(means) - 1)
+    return {"point_estimate": point_estimate, "se": math.sqrt(var), "n_resamples_used": n_resamples}
+
+def _jackknife_a(data):
+    n = len(data)
+    loo = [sum(data[:i] + data[i+1:]) / (n - 1) for i in range(n)]
+    mean_loo = sum(loo) / n
+    num = sum((mean_loo - x) ** 3 for x in loo)
+    den = 6.0 * (sum((mean_loo - x) ** 2 for x in loo) ** 1.5)
+    return num / den if den != 0 else 0.0
+
+def _norm_cdf(x): return 0.5 * (1 + math.erf(x / math.sqrt(2)))
+
+def _norm_ppf(p):
+    a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00]
+    b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,6.680131188771972e+01,-1.328068155288572e+01]
+    c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,-2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00]
+    d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,3.754408661907416e+00]
+    p_low=0.02425
+    if p<p_low:
+        q=math.sqrt(-2*math.log(p))
+        return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1)
+    elif p<=1-p_low:
+        q=p-0.5; r=q*q
+        return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1)
+    else:
+        q=math.sqrt(-2*math.log(1-p))
+        return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1)
+
+def bca_interval(payload, depth=1):
+    data = payload["data"]; n = len(data)
+    if n < 5: raise ValueError("BCa needs at least 5 observations")
+    ci_level = payload.get("ci_level", 0.95)
+    n_resamples = payload.get("n_resamples", 5000)
+    seed = payload.get("seed", 0)
+    base = REGISTRY.invoke(A_CID, {"data": data, "n_resamples": n_resamples, "seed": seed}, depth=depth+1)
+    rng = random.Random(seed)
+    means = sorted(sum(data[rng.randrange(n)] for _ in range(n)) / n for _ in range(n_resamples))
+    prop_below = sum(1 for m in means if m < base["point_estimate"]) / len(means)
+    prop_below = min(max(prop_below, 1e-6), 1-1e-6)
+    z0 = _norm_ppf(prop_below)
+    a = _jackknife_a(data)
+    alpha = 1 - ci_level
+    z_lo, z_hi = _norm_ppf(alpha/2), _norm_ppf(1-alpha/2)
+    def adj(z): return _norm_cdf(z0 + (z0+z)/(1 - a*(z0+z)))
+    p_lo, p_hi = adj(z_lo), adj(z_hi)
+    i_lo = max(0, min(len(means)-1, int(p_lo*len(means))))
+    i_hi = max(0, min(len(means)-1, int(p_hi*len(means))))
+    return {"point_estimate": base["point_estimate"], "ci_lower": means[i_lo], "ci_upper": means[i_hi],
+            "bias_correction_z0": z0, "acceleration_a": a, "n_resamples_used": n_resamples}
+
+def double_bootstrap_ci(payload, depth=0):
+    data = payload["data"]; n = len(data)
+    if n < 5: raise ValueError("needs at least 5 observations")
+    ci_level = payload.get("ci_level", 0.95)
+    n_resamples = payload.get("n_resamples", 60)
+    seed = payload.get("seed", 0)
+    inner = REGISTRY.invoke(B_CID, {"data": data, "ci_level": ci_level, "n_resamples": max(500, n_resamples*8), "seed": seed}, depth=depth+1)
+    rng = random.Random(seed+1)
+    lowers, uppers = [], []
+    for _ in range(n_resamples):
+        resample = [data[rng.randrange(n)] for _ in range(n)]
+        oi = REGISTRY.invoke(B_CID, {"data": resample, "ci_level": ci_level, "n_resamples": 150, "seed": rng.randrange(1_000_000)}, depth=depth+1)
+        lowers.append(oi["ci_lower"]); uppers.append(oi["ci_upper"])
+    lowers.sort(); uppers.sort()
+    cal_lo = lowers[int(0.025*len(lowers))]
+    cal_hi = uppers[int(0.975*len(uppers))-1]
+    return {"point_estimate": inner["point_estimate"], "ci_lower_calibrated": cal_lo, "ci_upper_calibrated": cal_hi,
+            "inner_bca_ci_lower": inner["ci_lower"], "inner_bca_ci_upper": inner["ci_upper"], "outer_resamples_used": n_resamples}
+
+REGISTRY.register(A_CID, bootstrap_se)
+REGISTRY.register(B_CID, bca_interval)
+REGISTRY.register(C_CID, double_bootstrap_ci)
+
+def run_chain(data_list, seed):
+    a = REGISTRY.invoke(A_CID, {"data": data_list, "n_resamples": 5000, "seed": seed})
+    b = REGISTRY.invoke(B_CID, {"data": data_list, "n_resamples": 5000, "seed": seed})
+    c = double_bootstrap_ci({"data": data_list, "n_resamples": 60, "seed": seed}, depth=0)
+    from collections import Counter
+    counts = Counter(REGISTRY.call_log())
+    log_lines = [f"depth={d}  {cid}  (invoked {n}x)" for (d, cid), n in sorted(counts.items())]
+    max_depth = max(d for d, _ in REGISTRY.call_log())
+    return json.dumps({"a": a, "b": b, "c": c, "log": log_lines, "total_calls": len(REGISTRY.call_log()), "max_depth": max_depth})
+`;
+
+let pyodideReady = null;
+
+async function boot() {
+  const statusEl = document.getElementById('statusText');
+  const btn = document.getElementById('runBtn');
+  try {
+    let pyodide = await loadPyodide();
+    statusEl.textContent = 'running node definitions';
+    pyodide.runPython(PY_SOURCE);
+    pyodideReady = pyodide;
+    statusEl.textContent = 'ready — Python running in this tab';
+    statusEl.className = 'status ready';
+    btn.disabled = false;
+    btn.textContent = 'Run the chain on your data';
+  } catch (err) {
+    statusEl.textContent = 'failed to load Pyodide: ' + err;
+  }
+}
+
+async function animateGraph() {
+  const seq = [
+    ['node-a', null], ['node-b', 'arrow-ab'], ['node-b', null], ['node-a', 'arrow-ab'],
+    ['node-c', null], ['node-b', 'arrow-bc'], ['node-a', 'arrow-ab'],
+  ];
+  for (const [nodeId, arrowId] of seq) {
+    document.getElementById(nodeId).classList.add('active');
+    if (arrowId) document.getElementById(arrowId).classList.add('active');
+    await new Promise(r => setTimeout(r, 180));
+    document.getElementById(nodeId).classList.remove('active');
+    if (arrowId) document.getElementById(arrowId).classList.remove('active');
+  }
+}
+
+function renderCompareBar(naive, bca, cal, dataMin, dataMax) {
+  const pad = (dataMax - dataMin) * 0.15;
+  const lo = Math.min(naive[0], bca[0], cal[0], dataMin) - pad;
+  const hi = Math.max(naive[1], bca[1], cal[1], dataMax) + pad;
+  const pct = v => ((v - lo) / (hi - lo)) * 100;
+  function row(label, cls, interval, note) {
+    const left = pct(interval[0]), right = pct(interval[1]);
+    return `<div class="compare-row"><div class="compare-label">${label}</div>
+      <div class="compare-track"><div class="compare-bar ${cls}" style="left:${left}%; width:${right-left}%"></div></div></div>
+      <div class="compare-note">${note}</div>`;
+  }
+  return row('classical formula', 'naive', naive, `± 1.96·${term('se')}, assumes a symmetric normal-shaped uncertainty — shown for contrast, not computed by any node`)
+       + row('B · ' + term('bca'), 'bca', bca, `Node A's ${term('resample')} spread, corrected for ${term('z0')} and ${term('accel', 'skew')}`)
+       + row('C · calibrated', 'calibrated', cal, `Node B ${term('calibrated', 're-run')} 61× across outer resamples, to test how much BCa's own interval jumps around`);
+}
+
+function runChain() {
+  const btn = document.getElementById('runBtn');
+  const raw = document.getElementById('dataInput').value;
+  const nums = raw.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+  if (nums.length < 5) { alert('Need at least 5 numbers (comma-separated) — the BCa jackknife step requires it.'); return; }
+  btn.disabled = true;
+  btn.textContent = 'computing…';
+  animateGraph();
+
+  pyodideReady.globals.set('data_list', pyodideReady.toPy(nums));
+  const resultJson = pyodideReady.runPython(`run_chain(data_list, 1)`);
+  const r = JSON.parse(resultJson);
+
+  const dataMin = Math.min(...nums), dataMax = Math.max(...nums);
+  const naiveLo = r.a.point_estimate - 1.96 * r.a.se;
+  const naiveHi = r.a.point_estimate + 1.96 * r.a.se;
+
+  document.getElementById('narrative').innerHTML = `
+    <p>Your ${nums.length} numbers average to <b>${r.a.point_estimate.toFixed(2)}</b> (the ${term('point_estimate')}). Node A doesn't trust that number blindly —
+    it re-drew samples like yours ${term('resample', '5,000 times')} to see how much the average could plausibly wobble.
+    Answer: about <b>±${r.a.se.toFixed(2)}</b> (the ${term('se')}).</p>
+    <p>Node B is the ${term('bca')} step — it took that wobble and corrected it for two subtle biases
+    (${term('z0', 'z₀=' + r.b.bias_correction_z0.toFixed(3))} and ${term('accel', 'a=' + r.b.acceleration_a.toFixed(4))}),
+    landing on a tighter, more honest range: <b>[${r.b.ci_lower.toFixed(2)}, ${r.b.ci_upper.toFixed(2)}]</b>.</p>
+    <p>Node C asked a harder question: how much would <i>that correction itself</i> wobble, if you'd drawn a different sample?
+    It re-ran Node B's entire procedure 61 times to find out, arriving at a final, ${term('calibrated')} range of
+    <b>[${r.c.ci_lower_calibrated.toFixed(2)}, ${r.c.ci_upper_calibrated.toFixed(2)}]</b> — wider, because it accounts for
+    one more layer of real uncertainty the earlier two papers couldn't see.</p>
+  `;
+
+  document.getElementById('compare').innerHTML = renderCompareBar(
+    [naiveLo, naiveHi], [r.b.ci_lower, r.b.ci_upper], [r.c.ci_lower_calibrated, r.c.ci_upper_calibrated], dataMin, dataMax
+  );
+
+  document.getElementById('resultBody').innerHTML = `
+    <div class="result-node">
+      <div class="result-label">A · Efron 1979</div>
+      <div class="result-line">point_estimate=<b>${r.a.point_estimate.toFixed(4)}</b>  ${term('se')}=<b>${r.a.se.toFixed(4)}</b></div>
+    </div>
+    <div class="result-node">
+      <div class="result-label">B · Efron &amp; Tibshirani 1993 — cites A</div>
+      <div class="result-line">95% ${term('bca')} ${term('ci')} = [<b>${r.b.ci_lower.toFixed(4)}</b>, <b>${r.b.ci_upper.toFixed(4)}</b>]  ${term('z0')}=${r.b.bias_correction_z0.toFixed(4)}  ${term('accel')}=${r.b.acceleration_a.toFixed(6)}</div>
+      <div class="result-why">Cannot compute without Node A's resample distribution — BCa is defined as a correction applied to it, not an independent method.</div>
+    </div>
+    <div class="result-node">
+      <div class="result-label">C · Davison &amp; Hinkley 1997 — cites B, which cites A</div>
+      <div class="result-line">${term('calibrated')} ${term('ci')} = [<b>${r.c.ci_lower_calibrated.toFixed(4)}</b>, <b>${r.c.ci_upper_calibrated.toFixed(4)}</b>]</div>
+      <div class="result-why">Re-ran Node B's full procedure ${r.c.outer_resamples_used}× to test how stable BCa's own interval is — see invocation log below.</div>
+    </div>
+  `;
+
+  document.getElementById('ledgerIntro').innerHTML =
+    `Read as: each line is one function call that actually happened, at what citation-${term('depth')}, and how many times.`;
+  document.getElementById('ledger').innerHTML =
+    `<span class="dim">invocation log — proves the chain ran, not just that this page claims it did</span>\n` +
+    r.log.join('\n') +
+    `\n<span class="dim">total invocations: ${r.total_calls} · max depth reached: ${r.max_depth} (ceiling: 3)</span>`;
+  document.getElementById('ledgerKey').innerHTML =
+    `<b>fn_cid</b> (the long bafy_... string) = ${TERMS.fn_cid.def}<br>` +
+    `<b>depth</b> = ${TERMS.depth.def}<br>` +
+    `<b>invoked Nx</b> = ${TERMS.invoked.def}`;
+
+  document.getElementById('results').style.display = 'block';
+  btn.disabled = false;
+  btn.textContent = 'Run again';
+}
+
+document.getElementById('runBtn').addEventListener('click', runChain);
+boot();
+</script>
+</body>
+</html>

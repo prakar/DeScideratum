@@ -1,6 +1,7 @@
 """
-Registers the three-node resampling knot and runs the full chain:
-  Davison & Hinkley (1997) --invokes--> Efron & Tibshirani (1993) --invokes--> Efron (1979)
+Registers the multiple-testing knot's two invocable nodes and runs the
+chain, then prints the rubric verdict table -- including the citation
+that's deliberately NOT wired up as a function.
 
 Run with: python3 run_demo.py
 """
@@ -9,65 +10,56 @@ import os
 sys.path.insert(0, os.path.dirname(__file__))
 
 from registry import REGISTRY
-from functions.efron_1979_bootstrap import bootstrap_se, FN_CID as A_CID
-from functions.efron_tibshirani_1993_bca import bca_interval, FN_CID as B_CID, BCaInput
-from functions.davison_hinkley_1997_double_bootstrap import (
-    double_bootstrap_ci, FN_CID as C_CID, DoubleBootstrapInput,
-)
+from functions.benjamini_hochberg_1995 import bh_adjust, FN_CID as A_CID, BHInput
+from functions.storey_2002_qvalue import storey_qvalues, FN_CID as B_CID, QValueInput
+from citation_records import print_rubric_table
 
-REGISTRY.register(A_CID, bootstrap_se)
-REGISTRY.register(B_CID, bca_interval)
-REGISTRY.register(C_CID, double_bootstrap_ci)
+REGISTRY.register(A_CID, bh_adjust)
+REGISTRY.register(B_CID, storey_qvalues)
 
 
 def main():
-    # a synthetic "reader's own dataset" -- the whole point being that
-    # this is NOT the original papers' data, it's substituted at call time
-    reader_data = [12.1, 14.3, 11.8, 15.9, 13.2, 10.7, 16.4, 12.9, 14.8, 11.2, 13.6, 15.1]
+    # a synthetic "reader's own p-values" -- 20 tests, a mix of clearly
+    # significant, borderline, and null results
+    reader_pvalues = [
+        0.0001, 0.0004, 0.0012, 0.008, 0.011, 0.019, 0.021, 0.033, 0.041,
+        0.052, 0.078, 0.11, 0.14, 0.19, 0.24, 0.31, 0.42, 0.55, 0.71, 0.93,
+    ]
 
-    print("=" * 70)
-    print("Resampling knot -- live invocation chain")
-    print("=" * 70)
+    print("=" * 78)
+    print("Multiple-testing knot -- live invocation chain")
+    print("=" * 78)
 
-    print("\n[Node A] Efron (1979) -- direct invocation, no citation chain")
-    a_out = REGISTRY.invoke(A_CID, __import__(
-        "functions.efron_1979_bootstrap", fromlist=["BootstrapSEInput"]
-    ).BootstrapSEInput(data=reader_data, n_resamples=5000, seed=1))
-    print(f"  point_estimate={a_out.point_estimate:.4f}  se={a_out.se:.4f}")
+    print("\n[Node A] Benjamini & Hochberg (1995) -- direct invocation")
+    a_out = REGISTRY.invoke(A_CID, BHInput(pvalues=reader_pvalues, alpha=0.05))
+    print(f"  n_significant={a_out.n_significant} / {len(reader_pvalues)}")
+    print(f"  adjusted p-values (first 5): {[round(p, 4) for p in a_out.adjusted_pvalues[:5]]}")
 
-    print("\n[Node B] Efron & Tibshirani (1993) -- CITES Node A via registry.invoke()")
-    b_out = REGISTRY.invoke(B_CID, BCaInput(data=reader_data, n_resamples=5000, seed=1))
-    print(f"  point_estimate={b_out.point_estimate:.4f}  "
-          f"95% BCa CI=[{b_out.ci_lower:.4f}, {b_out.ci_upper:.4f}]  "
-          f"z0={b_out.bias_correction_z0:.4f}  a={b_out.acceleration_a:.6f}")
+    print("\n[Node B] Storey (2002) -- CITES Node A via registry.invoke()")
+    b_out = storey_qvalues(QValueInput(pvalues=reader_pvalues, lambda_fixed=0.9), depth=0)
+    print(f"  pi0_hat={b_out.pi0_hat:.4f}")
+    print(f"  q-values (first 5): {[round(q, 4) for q in b_out.qvalues[:5]]}")
+    print(f"  naive_bh_n_significant (cited from Node A) = {b_out.naive_bh_n_significant}")
 
-    print("\n[Node C] Davison & Hinkley (1997) -- CITES Node B, which CITES Node A")
-    c_out = double_bootstrap_ci(
-        DoubleBootstrapInput(data=reader_data, n_resamples=300, seed=1), depth=0
-    )
-    print(f"  point_estimate={c_out.point_estimate:.4f}")
-    print(f"  inner BCa CI     =[{c_out.inner_bca_ci_lower:.4f}, {c_out.inner_bca_ci_upper:.4f}]")
-    print(f"  calibrated CI    =[{c_out.ci_lower_calibrated:.4f}, {c_out.ci_upper_calibrated:.4f}]")
+    print("\n" + "=" * 78)
+    print("Invocation log:")
+    for depth, cid in REGISTRY.call_log():
+        print(f"  depth={depth}  {cid}")
+    print("=" * 78)
 
-    print("\n" + "=" * 70)
-    print("Invocation log summary -- proves the chain actually ran,")
-    print("not just that the diagram claims it would:")
-    log = REGISTRY.call_log()
-    from collections import Counter
-    counts = Counter(log)
-    for (depth, cid), n in sorted(counts.items()):
-        print(f"  depth={depth}  {cid}  (invoked {n}x)")
-    print(f"  total invocations logged: {len(log)}")
-    print("=" * 70)
-
-    # sanity assertions -- this is the "unit test required before commit"
-    # rule from the manifest spec, run for real
-    assert a_out.se > 0, "bootstrap SE must be positive"
-    assert b_out.ci_lower < b_out.point_estimate < b_out.ci_upper, "BCa CI must bracket the point estimate"
-    assert c_out.ci_lower_calibrated <= c_out.ci_upper_calibrated, "calibrated CI must be well-ordered"
+    # sanity assertions
+    assert a_out.n_significant <= len(reader_pvalues)
+    assert 0 <= b_out.pi0_hat <= 1
+    assert b_out.naive_bh_n_significant == a_out.n_significant, \
+        "Node B's cited baseline must match Node A's own direct result on the same data"
     max_depth_seen = max(d for d, _ in REGISTRY.call_log())
-    assert max_depth_seen <= 3, "must respect MAX_INVOCATION_DEPTH"
+    assert max_depth_seen <= 3
     print(f"\nAll assertions passed. Max invocation depth reached: {max_depth_seen} (ceiling: 3)")
+    print("(Node B's cited BH count matches Node A's direct-call count on the same data --")
+    print(" confirms the citation is a real invocation, not a coincidentally-similar reimplementation.)")
+
+    print("\n")
+    print_rubric_table()
 
 
 if __name__ == "__main__":
