@@ -155,7 +155,7 @@ const TERMS = {
   },
   resample: {
     label: "resample",
-    def: "One simulated \\"what if I'd drawn a different sample\\": pick data points at random from your own data (the same point can be picked more than once), the same size as your original sample."
+    def: "One simulated re-draw — pick data points at random from your own data (the same point can be picked more than once), the same size as your original sample."
   },
   se: {
     label: "SE",
@@ -365,17 +365,22 @@ let pyodideReady = null;
 async function boot() {
   const statusEl = document.getElementById('statusText');
   const btn = document.getElementById('runBtn');
+  console.log('[knot] boot: fetching Pyodide runtime...');
   try {
     let pyodide = await loadPyodide();
+    console.log('[knot] boot: Pyodide loaded, defining node functions...');
     statusEl.textContent = 'running node definitions';
     pyodide.runPython(PY_SOURCE);
     pyodideReady = pyodide;
+    console.log('[knot] boot: ready.');
     statusEl.textContent = 'ready — Python running in this tab';
     statusEl.className = 'status ready';
     btn.disabled = false;
     btn.textContent = 'Run the chain on your data';
   } catch (err) {
-    statusEl.textContent = 'failed to load Pyodide: ' + err;
+    // most likely causes: CDN unreachable, or a syntax error in PY_SOURCE itself
+    console.error('[knot] boot FAILED:', err);
+    statusEl.textContent = 'failed to load — see browser console for details';
   }
 }
 
@@ -414,13 +419,24 @@ function runChain() {
   const raw = document.getElementById('dataInput').value;
   const nums = raw.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
   if (nums.length < 5) { alert('Need at least 5 numbers (comma-separated) — the BCa jackknife step requires it.'); return; }
+  console.log('[knot] run: invoking chain on', nums.length, 'values');
   btn.disabled = true;
   btn.textContent = 'computing…';
   animateGraph();
 
-  pyodideReady.globals.set('data_list', pyodideReady.toPy(nums));
-  const resultJson = pyodideReady.runPython(`run_chain(data_list, 1)`);
-  const r = JSON.parse(resultJson);
+  let r;
+  try {
+    pyodideReady.globals.set('data_list', pyodideReady.toPy(nums));
+    const resultJson = pyodideReady.runPython(`run_chain(data_list, 1)`);
+    r = JSON.parse(resultJson);
+    console.log('[knot] run: chain result', r);
+  } catch (err) {
+    console.error('[knot] run FAILED:', err);
+    alert('Computation failed — see browser console for details.');
+    btn.disabled = false;
+    btn.textContent = 'Run again';
+    return;
+  }
 
   const dataMin = Math.min(...nums), dataMax = Math.max(...nums);
   const naiveLo = r.a.point_estimate - 1.96 * r.a.se;
