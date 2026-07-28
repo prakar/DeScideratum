@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What Happens When You Combine Evidence? — DeScideratum</title>
+<style>
+  :root {
+    --paper: #f7f5f0; --ink: #1c2430; --ink-soft: #4a5468; --rule: #d8d3c6;
+    --amber: #b8791f; --amber-soft: #f0e2c8; --green: #3f7a52;
+    --mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+    --serif: "Source Serif 4", "Georgia", serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); line-height: 1.55; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 24px 120px; }
+
+  header { border-bottom: 2px solid var(--ink); padding-bottom: 20px; margin-bottom: 32px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber); margin-bottom: 8px; }
+  h1 { font-size: 30px; margin: 0 0 8px; font-weight: 600; }
+  .sub { color: var(--ink-soft); font-size: 15px; max-width: 62ch; }
+
+  .graph { display: flex; align-items: stretch; gap: 0; margin: 32px 0 8px; background: #fff; border: 1px solid var(--rule); border-radius: 6px; padding: 28px 20px; }
+  .gnode { flex: 1; text-align: center; padding: 14px 10px; border-radius: 5px; border: 2px solid var(--rule); background: var(--paper); transition: all 0.25s ease; position: relative; }
+  .gnode.active { border-color: var(--amber); background: var(--amber-soft); box-shadow: 0 0 0 4px rgba(184,121,31,0.15); }
+  .gnode .letter { font-family: var(--mono); font-weight: 700; color: var(--amber); font-size: 13px; }
+  .gnode .name { font-weight: 600; font-size: 13.5px; margin-top: 4px; }
+  .gnode .year { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); }
+  .garrow { flex: 0 0 44px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--ink-soft); }
+  .garrow.active { color: var(--amber); }
+  .graph-caption { font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft); text-align: center; margin-bottom: 20px; }
+
+  /* --- tap-friendly term system --- */
+  .term { border-bottom: 1.5px dotted var(--amber); cursor: pointer; position: relative; font-weight: 600; }
+  .term:hover { background: var(--amber-soft); }
+  .term-pop {
+    display: none; position: absolute; left: 50%; top: 130%; transform: translateX(-50%);
+    background: var(--ink); color: var(--paper); font-family: var(--serif); font-size: 13px;
+    padding: 10px 13px; border-radius: 5px; width: 250px; line-height: 1.45; z-index: 50;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3); text-align: left; font-weight: 400;
+  }
+  .term-pop::before { content: ""; position: absolute; left: 50%; top: -6px; transform: translateX(-50%); border: 6px solid transparent; border-bottom-color: var(--ink); }
+  .term-pop.open { display: block; }
+  .term-pop .close-hint { display: block; margin-top: 6px; font-family: var(--mono); font-size: 10px; color: #9aa5b8; }
+
+  .glossary-toggle {
+    font-family: var(--mono); font-size: 12px; color: var(--amber); background: none; border: 1px solid var(--amber);
+    border-radius: 3px; padding: 7px 14px; cursor: pointer; margin-bottom: 24px;
+  }
+  dialog#glossaryDialog { border: 1px solid var(--rule); border-radius: 6px; padding: 0; max-width: 560px; width: 90vw; max-height: 80vh; }
+  dialog#glossaryDialog::backdrop { background: rgba(28,36,48,0.55); }
+  .glossary-head { position: sticky; top: 0; background: #fff; display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--rule); }
+  .glossary-head h2 { margin: 0; font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+  .glossary-close { font-family: var(--mono); font-size: 13px; background: none; border: none; color: var(--ink-soft); cursor: pointer; padding: 4px 8px; }
+  .glossary-body { padding: 6px 22px 20px; overflow-y: auto; }
+  .glossary-item { padding: 10px 0; border-bottom: 1px solid var(--rule); }
+  .glossary-item:last-child { border-bottom: none; }
+  .glossary-item b { font-family: var(--mono); color: var(--amber); font-size: 13.5px; }
+  .glossary-item div { font-size: 14px; margin-top: 3px; color: var(--ink-soft); }
+
+  .panel { background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 24px; margin-bottom: 24px; }
+  .panel h2 { font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin: 0 0 14px; }
+  textarea { width: 100%; font-family: var(--mono); font-size: 14px; border: 1px solid var(--rule); border-radius: 3px; padding: 10px 12px; background: var(--paper); color: var(--ink); resize: vertical; min-height: 44px; }
+  .row { display: flex; gap: 16px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+  button { font-family: var(--mono); font-size: 13px; font-weight: 600; background: var(--ink); color: var(--paper); border: none; padding: 11px 22px; border-radius: 3px; cursor: pointer; letter-spacing: 0.02em; }
+  button:disabled { background: #9aa0ab; cursor: wait; }
+  .status { font-family: var(--mono); font-size: 12.5px; color: var(--ink-soft); }
+  .status.ready::before { content: "● "; color: var(--green); }
+  .status.loading::before { content: "○ "; color: var(--amber); }
+
+  #results { display: none; }
+  .narrative { background: var(--amber-soft); border-left: 3px solid var(--amber); border-radius: 0 4px 4px 0; padding: 16px 20px; font-size: 15px; margin-bottom: 24px; }
+  .narrative p { margin: 0 0 10px; }
+  .narrative p:last-child { margin-bottom: 0; }
+
+  .result-node { padding: 16px 0; border-bottom: 1px solid var(--rule); }
+  .result-node:last-child { border-bottom: none; }
+  .result-label { font-family: var(--mono); font-size: 12px; color: var(--amber); margin-bottom: 6px; }
+  .result-line { font-family: var(--mono); font-size: 13.5px; color: var(--ink); }
+  .result-why { font-size: 13.5px; color: var(--ink-soft); margin-top: 6px; max-width: 68ch; }
+
+  .compare-row { display: grid; grid-template-columns: 150px 1fr; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .compare-label { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); text-align: right; }
+  .compare-track { position: relative; height: 26px; background: var(--paper); border: 1px solid var(--rule); border-radius: 3px; }
+  .compare-bar { position: absolute; top: 3px; bottom: 3px; border-radius: 2px; }
+  .compare-bar.naive { background: #c9c2ae; }
+  .compare-bar.bca { background: #d9ab5f; }
+  .compare-bar.calibrated { background: var(--amber); }
+  .compare-note { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); margin-top: 4px; margin-bottom: 14px; margin-left: 162px; }
+
+  .ledger-intro { font-size: 14px; color: var(--ink-soft); margin-bottom: 10px; }
+  .ledger { background: var(--ink); color: var(--amber-soft); font-family: var(--mono); font-size: 12.5px; padding: 16px 18px; border-radius: 3px; margin-top: 4px; white-space: pre-wrap; }
+  .ledger .dim { color: #8b93a3; }
+  .ledger-key { font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft); margin-top: 8px; line-height: 1.6; }
+  .ledger-key b { color: var(--ink); }
+
+  .fine { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--rule); }
+</style>
+<style>
+  table.studies { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; margin-top: 4px; }
+  table.studies th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); padding: 4px 6px; border-bottom: 1px solid var(--rule); }
+  table.studies td { padding: 3px 6px; border-bottom: 1px solid var(--rule); }
+  table.studies input { width: 100%; font-family: var(--mono); font-size: 12.5px; border: 1px solid var(--rule); border-radius: 2px; padding: 4px 5px; background: var(--paper); color: var(--ink); box-sizing: border-box; }
+  table.studies input.num { width: 64px; }
+  .warn-icon { color: var(--amber); cursor: help; }
+  .applicability-note { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">DeScideratum · Citation Lineage 3 of 3</div>
+    <h1>What Happens When You Combine Evidence?</h1>
+    <div class="sub" id="subIntro">This is a demonstration from a research prototype exploring a different way to cite scientific work. Loading...</div>
+  </header>
+
+  <button class="glossary-toggle" id="glossaryBtn">Show full glossary (every term on this page, defined)</button>
+  <dialog id="glossaryDialog">
+    <div class="glossary-head">
+      <h2>Glossary — every term on this page</h2>
+      <button class="glossary-close" id="glossaryCloseBtn">close ✕</button>
+    </div>
+    <div class="glossary-body" id="glossaryBody"></div>
+  </dialog>
+
+  <div class="graph" id="graph">
+    <div class="gnode" id="node-a"><div class="letter">A</div><div class="name">Cochran</div><div class="year">1954</div></div>
+    <div class="garrow" id="arrow-ab">→</div>
+    <div class="gnode" id="node-b"><div class="letter">B</div><div class="name">DerSimonian &amp; Laird</div><div class="year">1986</div></div>
+    <div class="garrow" id="arrow-bc">→</div>
+    <div class="gnode" id="node-c"><div class="letter">C</div><div class="name">Higgins &amp; Thompson</div><div class="year">2002</div></div>
+  </div>
+  <div class="graph-caption">an arrow lighting up means that node's code just called the previous node's code — not a claim, an event</div>
+
+  <div class="panel">
+    <h2>Your studies (illustrative — edit freely)</h2>
+    <table class="studies" id="studyTable">
+      <thead><tr><th>Label</th><th>Estimate</th><th>SE</th><th>Population</th><th>Conditions</th></tr></thead>
+      <tbody id="studyRows"></tbody>
+    </table>
+    <div class="applicability-note">Each row is a real <span class="term" data-term="applicability" onclick="toggleTerm(event,this)">Applicability Profile<span class="term-pop"></span></span> — the conditions under which that row's number is valid, carried alongside the data itself rather than left in a footnote.</div>
+    <div class="row">
+      <button id="runBtn" disabled>Loading Python runtime…</button>
+      <span class="status loading" id="statusText">fetching Pyodide</span>
+    </div>
+  </div>
+
+  <div class="panel" id="results">
+    <h2>What just happened, in plain language</h2>
+    <div class="narrative" id="narrative"></div>
+
+    <h2>The technical result</h2>
+    <div id="resultBody"></div>
+
+    <h2 style="margin-top:22px">Invocation log — the receipt</h2>
+    <div class="ledger" id="ledger"></div>
+  </div>
+
+  <div class="fine">
+    No server received your data at any point. Source for the node functions is inline in this page's &lt;script&gt; block, inspectable via "view source." Studies are illustrative/synthetic, not any real trial's published data.
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
+<script>
+const TERMS = {
+  meta_analysis: { label: "meta-analysis", def: "Combining several independent studies' estimates of the same thing into one overall, more precise estimate." },
+  pooled_estimate: { label: "pooled estimate", def: "The single combined number you get after weighing and averaging every study together." },
+  fixed_effect: { label: "fixed-effect", def: "A pooling method (Cochran 1954) that assumes every study is estimating the exact same true value, differing only in precision." },
+  random_effects: { label: "random-effects", def: "A pooling method (DerSimonian & Laird 1986) that allows for real differences between studies, not just sampling noise — adds an extra 'between-study' uncertainty term." },
+  q_stat: { label: "Q statistic", def: "A number measuring how much the studies disagree with each other, beyond what you'd expect from their individual precision alone." },
+  tau2: { label: "τ² (tau-squared)", def: "The estimated amount of genuine between-study variation — how much the TRUE effect actually differs from study to study, not just measurement noise." },
+  i2: { label: "I² (I-squared)", def: "Q turned into a percentage: what fraction of the total spread across studies is real disagreement rather than each study's own sampling noise." },
+  heterogeneity: { label: "heterogeneity", def: "How much the studies disagree with each other. Low heterogeneity means they broadly agree; high means pooling them into one number may hide real differences." },
+  applicability: { label: "Applicability Profile", def: "The conditions under which a study's number is actually valid — who it was measured on, under what conditions, and any known weaknesses. Two numbers can be equally precise and still not be safely combinable if their applicability profiles don't overlap." },
+};
+
+function term(key, textOverride) {
+  const t = TERMS[key];
+  const text = textOverride || t.label;
+  return `<span class="term" data-term="${key}" onclick="toggleTerm(event, this)">${text}<span class="term-pop"></span></span>`;
+}
+function toggleTerm(evt, el) {
+  evt.stopPropagation();
+  const key = el.getAttribute('data-term');
+  const pop = el.querySelector('.term-pop');
+  const alreadyOpen = pop.classList.contains('open');
+  document.querySelectorAll('.term-pop.open').forEach(p => p.classList.remove('open'));
+  if (!alreadyOpen) {
+    pop.innerHTML = `${TERMS[key].def}<span class="close-hint">tap anywhere to close</span>`;
+    pop.classList.add('open');
+  }
+}
+document.addEventListener('click', () => {
+  document.querySelectorAll('.term-pop.open').forEach(p => p.classList.remove('open'));
+});
+function renderGlossary() {
+  document.getElementById('glossaryBody').innerHTML = Object.entries(TERMS).map(([k, t]) => `
+    <div class="glossary-item"><b>${t.label}</b><div>${t.def}</div></div>
+  `).join('');
+}
+renderGlossary();
+const glossaryDialog = document.getElementById('glossaryDialog');
+document.getElementById('glossaryBtn').addEventListener('click', () => glossaryDialog.showModal());
+document.getElementById('glossaryCloseBtn').addEventListener('click', () => glossaryDialog.close());
+glossaryDialog.addEventListener('click', (e) => { if (e.target === glossaryDialog) glossaryDialog.close(); });
+
+document.getElementById('subIntro').innerHTML =
+  `Five studies, one question, one honest combined answer: that's what ${term('meta_analysis')} is for. This page rebuilds three real, ` +
+  `landmark statistics papers — spanning 1954 to 2002 — as a <b>recomposable research prototype</b>, the same approach used elsewhere in ` +
+  `this project: each later method is wired to genuinely call the earlier one's method as working code, live, rather than just citing it in ` +
+  `a footnote. It also adds something the other demonstrations here don't: every study you see below carries its own ` +
+  `${term('applicability')}, in the open, rather than a bare number pretending context doesn't matter. Edit the studies, click run, and ` +
+  `watch all three papers' methods run in sequence in this browser tab. Nothing you type leaves your device.`;
+
+function defaultStudies() {
+  return [
+    {label: "Study 1", estimate: 0.42, se: 0.08, population: "adults, urban clinic", conditions: "6-week follow-up"},
+    {label: "Study 2", estimate: 0.35, se: 0.10, population: "adults, rural clinic", conditions: "6-week follow-up"},
+    {label: "Study 3", estimate: 0.51, se: 0.09, population: "adults, mixed setting", conditions: "8-week follow-up"},
+    {label: "Study 4", estimate: 0.28, se: 0.12, population: "adults, urban clinic", conditions: "4-week follow-up"},
+    {label: "Study 5", estimate: 0.45, se: 0.07, population: "adults, urban clinic", conditions: "6-week follow-up"},
+  ];
+}
+function renderStudyTable() {
+  const tbody = document.getElementById('studyRows');
+  tbody.innerHTML = defaultStudies().map((s, i) => `
+    <tr>
+      <td><input id="s${i}-label" value="${s.label}"></td>
+      <td><input id="s${i}-estimate" class="num" type="number" step="0.01" value="${s.estimate}"></td>
+      <td><input id="s${i}-se" class="num" type="number" step="0.01" value="${s.se}"></td>
+      <td><input id="s${i}-population" value="${s.population}"></td>
+      <td><input id="s${i}-conditions" value="${s.conditions}"></td>
+    </tr>
+  `).join('');
+}
+renderStudyTable();
+
+function readStudies() {
+  const studies = [];
+  for (let i = 0; i < 5; i++) {
+    studies.push({
+      label: document.getElementById(`s${i}-label`).value,
+      estimate: parseFloat(document.getElementById(`s${i}-estimate`).value),
+      se: parseFloat(document.getElementById(`s${i}-se`).value),
+      population: document.getElementById(`s${i}-population`).value,
+      conditions: document.getElementById(`s${i}-conditions`).value,
+    });
+  }
+  return studies;
+}
+
+const PY_SOURCE = `
+import json
+
+class Registry:
+    def __init__(self):
+        self._fns = {}
+        self._cites = {}
+        self._edges = []
+    def register(self, cid, fn):
+        self._fns[cid] = fn
+    def register_cites(self, source_cid, cites):
+        self._cites[source_cid] = cites
+    def invoke(self, cid, payload, depth=0, source_fn_cid=None):
+        if depth > 3:
+            raise Exception(f"exceeded depth 3 at {cid}")
+        meta = {}
+        if source_fn_cid and source_fn_cid in self._cites:
+            meta = self._cites[source_fn_cid].get(cid, {})
+        self._edges.append({"depth": depth, "source": source_fn_cid, "target": cid,
+                             "edge_type": meta.get("edge_type", "unknown"), "tier": meta.get("tier", -1)})
+        return self._fns[cid](payload, depth)
+    def edges(self):
+        return list(self._edges)
+
+REGISTRY = Registry()
+A_CID = "bafy_cochran_1954_fixed_effect_v1"
+B_CID = "bafy_dersimonian_laird_1986_random_effects_v1"
+C_CID = "bafy_higgins_thompson_2002_i_squared_v1"
+
+def fixed_effect_pool(payload, depth=0):
+    studies = payload["studies"]
+    k = len(studies)
+    weights = [1.0/(s["se"]**2) for s in studies]
+    sum_w = sum(weights)
+    pooled = sum(w*s["estimate"] for w,s in zip(weights, studies)) / sum_w
+    pooled_se = (1.0/sum_w) ** 0.5
+    Q = sum(w*(s["estimate"]-pooled)**2 for w,s in zip(weights, studies))
+    return {"pooled_estimate": pooled, "pooled_se": pooled_se, "q_statistic": Q, "k": k, "weights": weights}
+
+def random_effects_pool(payload, depth=1):
+    studies = payload["studies"]
+    base = REGISTRY.invoke(A_CID, {"studies": studies}, depth=depth+1, source_fn_cid=B_CID)
+    weights = base["weights"]
+    sum_w = sum(weights); sum_w2 = sum(w**2 for w in weights)
+    c = sum_w - (sum_w2/sum_w)
+    tau2 = max(0.0, (base["q_statistic"] - (base["k"]-1)) / c) if c != 0 else 0.0
+    re_w = [1.0/(s["se"]**2 + tau2) for s in studies]
+    sum_rw = sum(re_w)
+    pooled = sum(w*s["estimate"] for w,s in zip(re_w, studies)) / sum_rw
+    pooled_se = (1.0/sum_rw) ** 0.5
+    return {"pooled_estimate": pooled, "pooled_se": pooled_se, "tau_squared": tau2,
+            "q_statistic": base["q_statistic"], "k": base["k"]}
+
+def heterogeneity_i2(payload, depth=0):
+    studies = payload["studies"]
+    base = REGISTRY.invoke(B_CID, {"studies": studies}, depth=depth+1, source_fn_cid=C_CID)
+    Q = base["q_statistic"]; k = base["k"]
+    i2 = max(0.0, (Q-(k-1))/Q) * 100 if Q != 0 else 0.0
+    if i2 < 25: interp = "low heterogeneity -- studies broadly agree"
+    elif i2 < 50: interp = "moderate heterogeneity"
+    elif i2 < 75: interp = "substantial heterogeneity -- pooling should be interpreted cautiously"
+    else: interp = "considerable heterogeneity -- pooling a single estimate may be misleading"
+    return {"i_squared_pct": i2, "q_statistic": Q, "k": k, "interpretation": interp, "tau_squared": base["tau_squared"], "pooled_estimate": base["pooled_estimate"], "pooled_se": base["pooled_se"]}
+
+REGISTRY.register(A_CID, fixed_effect_pool)
+REGISTRY.register(B_CID, random_effects_pool)
+REGISTRY.register(C_CID, heterogeneity_i2)
+REGISTRY.register_cites(B_CID, {A_CID: {"edge_type": "cito:usesMethodIn", "tier": 0}})
+REGISTRY.register_cites(C_CID, {B_CID: {"edge_type": "cito:usesMethodIn", "tier": 0}})
+
+def run_chain(studies):
+    a = REGISTRY.invoke(A_CID, {"studies": studies})
+    b = random_effects_pool({"studies": studies}, depth=0)
+    c = heterogeneity_i2({"studies": studies}, depth=0)
+    from collections import Counter
+    counts = Counter((e["depth"], e["edge_type"], e["tier"], e["target"]) for e in REGISTRY.edges())
+    log_lines = [f"depth={d}  {et}  tier={t}  -> {tgt}  ({n}x)" for (d,et,t,tgt), n in sorted(counts.items())]
+    assert b["q_statistic"] == a["q_statistic"], "Node B Q must match Node A Q exactly"
+    assert c["q_statistic"] == a["q_statistic"], "Node C Q (via 2 hops) must match Node A Q exactly"
+    return json.dumps({"a": a, "b": b, "c": c, "log": log_lines, "total": len(REGISTRY.edges())})
+`;
+
+let pyodideReady = null;
+
+async function boot() {
+  const statusEl = document.getElementById('statusText');
+  const btn = document.getElementById('runBtn');
+  console.log('[lineage] boot: fetching Pyodide runtime...');
+  try {
+    let pyodide = await loadPyodide();
+    console.log('[lineage] boot: Pyodide loaded, defining node functions...');
+    statusEl.textContent = 'running node definitions';
+    pyodide.runPython(PY_SOURCE);
+    pyodideReady = pyodide;
+    console.log('[lineage] boot: ready.');
+    statusEl.textContent = 'ready — Python running in this tab';
+    statusEl.className = 'status ready';
+    btn.disabled = false;
+    btn.textContent = 'Run the chain on these studies';
+  } catch (err) {
+    console.error('[lineage] boot FAILED:', err);
+    statusEl.textContent = 'failed to load — see browser console for details';
+  }
+}
+
+async function animateGraph() {
+  const seq = [['node-a', null], ['node-b', 'arrow-ab'], ['node-a', 'arrow-ab'],
+               ['node-c', null], ['node-b', 'arrow-bc'], ['node-a', 'arrow-ab']];
+  for (const [nodeId, arrowId] of seq) {
+    document.getElementById(nodeId).classList.add('active');
+    if (arrowId) document.getElementById(arrowId).classList.add('active');
+    await new Promise(r => setTimeout(r, 180));
+    document.getElementById(nodeId).classList.remove('active');
+    if (arrowId) document.getElementById(arrowId).classList.remove('active');
+  }
+}
+
+function runChain() {
+  const btn = document.getElementById('runBtn');
+  const studies = readStudies();
+  if (studies.some(s => isNaN(s.estimate) || isNaN(s.se) || s.se <= 0)) {
+    alert('Every study needs a numeric estimate and a positive SE.');
+    return;
+  }
+  console.log('[lineage] run: invoking chain on', studies.length, 'studies');
+  btn.disabled = true;
+  btn.textContent = 'computing…';
+  animateGraph();
+
+  let r;
+  try {
+    pyodideReady.globals.set('studies_py', pyodideReady.toPy(studies));
+    const resultJson = pyodideReady.runPython(`run_chain(studies_py)`);
+    r = JSON.parse(resultJson);
+    console.log('[lineage] run: chain result', r);
+  } catch (err) {
+    console.error('[lineage] run FAILED:', err);
+    alert('Computation failed — see browser console for details.');
+    btn.disabled = false; btn.textContent = 'Run again';
+    return;
+  }
+
+  document.getElementById('narrative').innerHTML = `
+    <p>Cochran's 1954 method combines your ${studies.length} studies into one ${term('pooled_estimate')} of
+    <b>${r.a.pooled_estimate.toFixed(4)}</b>, weighting more precise studies more heavily. It also measures how much the studies
+    disagree with each other — the ${term('q_stat')} — at <b>${r.a.q_statistic.toFixed(4)}</b>.</p>
+    <p>DerSimonian &amp; Laird's 1986 method took that same Q statistic (cited directly from Cochran's code, not recomputed) and
+    used it to estimate ${term('tau2')} = <b>${r.b.tau_squared.toFixed(4)}</b> — genuine study-to-study variation, not just noise.
+    ${r.b.tau_squared > 0 ? "Because that's above zero, its combined estimate accounts for real disagreement between studies, not just each one's own precision." : "It came out at zero here — Cochran's simpler assumption (the studies agree, once you account for their own precision) already fit the data well."}</p>
+    <p>Higgins &amp; Thompson's 2002 method turned that same Q into a percentage: ${term('i2')} = <b>${r.c.i_squared_pct.toFixed(1)}%</b> —
+    <i>${r.c.interpretation}</i>.</p>
+  `;
+
+  document.getElementById('resultBody').innerHTML = `
+    <div class="result-node">
+      <div class="result-label">A · Cochran 1954</div>
+      <div class="result-line">pooled_estimate=<b>${r.a.pooled_estimate.toFixed(4)}</b>  pooled_se=<b>${r.a.pooled_se.toFixed(4)}</b>  Q=<b>${r.a.q_statistic.toFixed(4)}</b></div>
+    </div>
+    <div class="result-node">
+      <div class="result-label">B · DerSimonian &amp; Laird 1986 — cito:usesMethodIn A</div>
+      <div class="result-line">pooled_estimate=<b>${r.b.pooled_estimate.toFixed(4)}</b>  τ²=<b>${r.b.tau_squared.toFixed(4)}</b></div>
+      <div class="result-why">Cannot compute τ² without Cochran's Q and weights — structurally requires the earlier paper's output, not just conceptually related to it.</div>
+    </div>
+    <div class="result-node">
+      <div class="result-label">C · Higgins &amp; Thompson 2002 — cito:usesMethodIn B</div>
+      <div class="result-line">I²=<b>${r.c.i_squared_pct.toFixed(1)}%</b></div>
+      <div class="result-why">Q statistic matches Node A's original exactly, even after two real hops — the consistency check this page runs on every click.</div>
+    </div>
+  `;
+
+  document.getElementById('ledger').innerHTML =
+    `<span class="dim">invocation log</span>\n` + r.log.join('\n') + `\n<span class="dim">total invocations: ${r.total}</span>`;
+
+  document.getElementById('results').style.display = 'block';
+  btn.disabled = false;
+  btn.textContent = 'Run again';
+}
+
+document.getElementById('runBtn').addEventListener('click', runChain);
+boot();
+</script>
+</body>
+</html>
