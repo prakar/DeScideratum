@@ -1,4 +1,4 @@
-# DeScideratum
+# DeScideratum 
 
 A research prototype exploring a different way to cite scientific work: instead of a citation being a name and a year you have to trust, a citation can be a live function call — verifiable, runnable, and checkable by anyone, on their own data, with nothing installed.
 
