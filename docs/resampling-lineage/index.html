@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Resampling Knot — Citation as Invocation</title>
+<title>How Much Should You Trust an Average? — DeScideratum</title>
 <style>
   :root {
     --paper: #f7f5f0; --ink: #1c2430; --ink-soft: #4a5468; --rule: #d8d3c6;
@@ -101,9 +101,9 @@
 <div class="wrap">
 
   <header>
-    <div class="eyebrow">Citation-as-Invocation · Demo Knot 1 of 4</div>
-    <h1>The Resampling Knot</h1>
-    <div class="sub" id="subIntro">Three papers, forty years apart, cited into each other as live function calls — not footnotes. Running in this tab. Nothing you type below leaves your browser.</div>
+    <div class="eyebrow">DeScideratum · Citation Lineage 1 of 2</div>
+    <h1>How Much Should You Trust an Average?</h1>
+    <div class="sub" id="subIntro">This is a demonstration from a research prototype exploring a different way to cite scientific work. Loading...</div>
   </header>
 
   <button class="glossary-toggle" id="glossaryBtn">Show full glossary (every term on this page, defined)</button>
@@ -249,9 +249,13 @@ glossaryDialog.addEventListener('click', (e) => { if (e.target === glossaryDialo
 
 // intro sentence now defines "bootstrap" and "CI" the very first time they'd be needed
 document.getElementById('subIntro').innerHTML =
-  `Three papers, forty years apart, cited into each other as live function calls — not footnotes. ` +
-  `All three build on the ${term('bootstrap')} method for estimating a ${term('ci')} around an average. ` +
-  `Running in this tab. Nothing you type below leaves your browser.`;
+  `Ordinarily, when a paper says it "builds on" an earlier one, you have to take that on faith — the actual dependency is invisible, ` +
+  `buried in decades-old math or code you'd have to reconstruct yourself to check. This page rebuilds three real, landmark statistics ` +
+  `papers — spanning 1979 to 1997 — as a <b>recomposable research prototype</b>: instead of just citing each other in a footnote, each ` +
+  `later paper's method is wired to genuinely call the earlier one's method as working code, live. Type in your own numbers below, and ` +
+  `you can watch all three papers' methods run in sequence, one calling the next, right here in this browser tab. All three build on the ` +
+  `${term('bootstrap')} method for estimating a ${term('ci')} around an average. Nothing you type leaves your device — the computation ` +
+  `happens entirely on your own machine.`;
 
 const PY_SOURCE = `
 import random, math, json
@@ -376,21 +380,21 @@ let pyodideReady = null;
 async function boot() {
   const statusEl = document.getElementById('statusText');
   const btn = document.getElementById('runBtn');
-  console.log('[knot] boot: fetching Pyodide runtime...');
+  console.log('[lineage] boot: fetching Pyodide runtime...');
   try {
     let pyodide = await loadPyodide();
-    console.log('[knot] boot: Pyodide loaded, defining node functions...');
+    console.log('[lineage] boot: Pyodide loaded, defining node functions...');
     statusEl.textContent = 'running node definitions';
     pyodide.runPython(PY_SOURCE);
     pyodideReady = pyodide;
-    console.log('[knot] boot: ready.');
+    console.log('[lineage] boot: ready.');
     statusEl.textContent = 'ready — Python running in this tab';
     statusEl.className = 'status ready';
     btn.disabled = false;
     btn.textContent = 'Run the chain on your data';
   } catch (err) {
     // most likely causes: CDN unreachable, or a syntax error in PY_SOURCE itself
-    console.error('[knot] boot FAILED:', err);
+    console.error('[lineage] boot FAILED:', err);
     statusEl.textContent = 'failed to load — see browser console for details';
   }
 }
@@ -430,7 +434,7 @@ function runChain() {
   const raw = document.getElementById('dataInput').value;
   const nums = raw.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
   if (nums.length < 5) { alert('Need at least 5 numbers (comma-separated) — the BCa jackknife step requires it.'); return; }
-  console.log('[knot] run: invoking chain on', nums.length, 'values');
+  console.log('[lineage] run: invoking chain on', nums.length, 'values');
   btn.disabled = true;
   btn.textContent = 'computing…';
   animateGraph();
@@ -440,9 +444,9 @@ function runChain() {
     pyodideReady.globals.set('data_list', pyodideReady.toPy(nums));
     const resultJson = pyodideReady.runPython(`run_chain(data_list, 1)`);
     r = JSON.parse(resultJson);
-    console.log('[knot] run: chain result', r);
+    console.log('[lineage] run: chain result', r);
   } catch (err) {
-    console.error('[knot] run FAILED:', err);
+    console.error('[lineage] run FAILED:', err);
     alert('Computation failed — see browser console for details.');
     btn.disabled = false;
     btn.textContent = 'Run again';

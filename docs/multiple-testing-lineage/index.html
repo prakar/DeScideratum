@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How Many of These Discoveries Are Real? — DeScideratum</title>
+<style>
+  :root {
+    --paper: #f7f5f0; --ink: #1c2430; --ink-soft: #4a5468; --rule: #d8d3c6;
+    --amber: #b8791f; --amber-soft: #f0e2c8; --green: #3f7a52;
+    --mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+    --serif: "Source Serif 4", "Georgia", serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); line-height: 1.55; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 24px 120px; }
+
+  header { border-bottom: 2px solid var(--ink); padding-bottom: 20px; margin-bottom: 32px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber); margin-bottom: 8px; }
+  h1 { font-size: 30px; margin: 0 0 8px; font-weight: 600; }
+  .sub { color: var(--ink-soft); font-size: 15px; max-width: 62ch; }
+
+  .graph { display: flex; align-items: stretch; gap: 0; margin: 32px 0 8px; background: #fff; border: 1px solid var(--rule); border-radius: 6px; padding: 28px 20px; }
+  .gnode { flex: 1; text-align: center; padding: 14px 10px; border-radius: 5px; border: 2px solid var(--rule); background: var(--paper); transition: all 0.25s ease; position: relative; }
+  .gnode.active { border-color: var(--amber); background: var(--amber-soft); box-shadow: 0 0 0 4px rgba(184,121,31,0.15); }
+  .gnode .letter { font-family: var(--mono); font-weight: 700; color: var(--amber); font-size: 13px; }
+  .gnode .name { font-weight: 600; font-size: 13.5px; margin-top: 4px; }
+  .gnode .year { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); }
+  .garrow { flex: 0 0 44px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--ink-soft); }
+  .garrow.active { color: var(--amber); }
+  .graph-caption { font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft); text-align: center; margin-bottom: 20px; }
+
+  /* --- tap-friendly term system --- */
+  .term { border-bottom: 1.5px dotted var(--amber); cursor: pointer; position: relative; font-weight: 600; }
+  .term:hover { background: var(--amber-soft); }
+  .term-pop {
+    display: none; position: absolute; left: 50%; top: 130%; transform: translateX(-50%);
+    background: var(--ink); color: var(--paper); font-family: var(--serif); font-size: 13px;
+    padding: 10px 13px; border-radius: 5px; width: 250px; line-height: 1.45; z-index: 50;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3); text-align: left; font-weight: 400;
+  }
+  .term-pop::before { content: ""; position: absolute; left: 50%; top: -6px; transform: translateX(-50%); border: 6px solid transparent; border-bottom-color: var(--ink); }
+  .term-pop.open { display: block; }
+  .term-pop .close-hint { display: block; margin-top: 6px; font-family: var(--mono); font-size: 10px; color: #9aa5b8; }
+
+  .glossary-toggle {
+    font-family: var(--mono); font-size: 12px; color: var(--amber); background: none; border: 1px solid var(--amber);
+    border-radius: 3px; padding: 7px 14px; cursor: pointer; margin-bottom: 24px;
+  }
+  dialog#glossaryDialog { border: 1px solid var(--rule); border-radius: 6px; padding: 0; max-width: 560px; width: 90vw; max-height: 80vh; }
+  dialog#glossaryDialog::backdrop { background: rgba(28,36,48,0.55); }
+  .glossary-head { position: sticky; top: 0; background: #fff; display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--rule); }
+  .glossary-head h2 { margin: 0; font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+  .glossary-close { font-family: var(--mono); font-size: 13px; background: none; border: none; color: var(--ink-soft); cursor: pointer; padding: 4px 8px; }
+  .glossary-body { padding: 6px 22px 20px; overflow-y: auto; }
+  .glossary-item { padding: 10px 0; border-bottom: 1px solid var(--rule); }
+  .glossary-item:last-child { border-bottom: none; }
+  .glossary-item b { font-family: var(--mono); color: var(--amber); font-size: 13.5px; }
+  .glossary-item div { font-size: 14px; margin-top: 3px; color: var(--ink-soft); }
+
+  .panel { background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 24px; margin-bottom: 24px; }
+  .panel h2 { font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin: 0 0 14px; }
+  textarea { width: 100%; font-family: var(--mono); font-size: 14px; border: 1px solid var(--rule); border-radius: 3px; padding: 10px 12px; background: var(--paper); color: var(--ink); resize: vertical; min-height: 44px; }
+  .row { display: flex; gap: 16px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+  button { font-family: var(--mono); font-size: 13px; font-weight: 600; background: var(--ink); color: var(--paper); border: none; padding: 11px 22px; border-radius: 3px; cursor: pointer; letter-spacing: 0.02em; }
+  button:disabled { background: #9aa0ab; cursor: wait; }
+  .status { font-family: var(--mono); font-size: 12.5px; color: var(--ink-soft); }
+  .status.ready::before { content: "● "; color: var(--green); }
+  .status.loading::before { content: "○ "; color: var(--amber); }
+
+  #results { display: none; }
+  .narrative { background: var(--amber-soft); border-left: 3px solid var(--amber); border-radius: 0 4px 4px 0; padding: 16px 20px; font-size: 15px; margin-bottom: 24px; }
+  .narrative p { margin: 0 0 10px; }
+  .narrative p:last-child { margin-bottom: 0; }
+
+  .result-node { padding: 16px 0; border-bottom: 1px solid var(--rule); }
+  .result-node:last-child { border-bottom: none; }
+  .result-label { font-family: var(--mono); font-size: 12px; color: var(--amber); margin-bottom: 6px; }
+  .result-line { font-family: var(--mono); font-size: 13.5px; color: var(--ink); }
+  .result-why { font-size: 13.5px; color: var(--ink-soft); margin-top: 6px; max-width: 68ch; }
+
+  .compare-row { display: grid; grid-template-columns: 150px 1fr; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .compare-label { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); text-align: right; }
+  .compare-track { position: relative; height: 26px; background: var(--paper); border: 1px solid var(--rule); border-radius: 3px; }
+  .compare-bar { position: absolute; top: 3px; bottom: 3px; border-radius: 2px; }
+  .compare-bar.naive { background: #c9c2ae; }
+  .compare-bar.bca { background: #d9ab5f; }
+  .compare-bar.calibrated { background: var(--amber); }
+  .compare-note { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); margin-top: 4px; margin-bottom: 14px; margin-left: 162px; }
+
+  .ledger-intro { font-size: 14px; color: var(--ink-soft); margin-bottom: 10px; }
+  .ledger { background: var(--ink); color: var(--amber-soft); font-family: var(--mono); font-size: 12.5px; padding: 16px 18px; border-radius: 3px; margin-top: 4px; white-space: pre-wrap; }
+  .ledger .dim { color: #8b93a3; }
+  .ledger-key { font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft); margin-top: 8px; line-height: 1.6; }
+  .ledger-key b { color: var(--ink); }
+
+  .fine { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--rule); }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">DeScideratum · Citation Lineage 2 of 2</div>
+    <h1>How Many of These Discoveries Are Real?</h1>
+    <div class="sub" id="subIntro">This is a demonstration from a research prototype exploring a different way to cite scientific work. Loading...</div>
+  </header>
+
+  <button class="glossary-toggle" id="glossaryBtn">Show full glossary (every term on this page, defined)</button>
+  <dialog id="glossaryDialog">
+    <div class="glossary-head">
+      <h2>Glossary — every term on this page</h2>
+      <button class="glossary-close" id="glossaryCloseBtn">close ✕</button>
+    </div>
+    <div class="glossary-body" id="glossaryBody"></div>
+  </dialog>
+
+  <div class="graph" id="graph">
+    <div class="gnode" id="node-a"><div class="letter">A</div><div class="name">Benjamini &amp; Hochberg</div><div class="year">1995</div></div>
+    <div class="garrow" id="arrow-ab">→</div>
+    <div class="gnode" id="node-b"><div class="letter">B</div><div class="name">Storey</div><div class="year">2002</div></div>
+    <div class="garrow" style="color:#c9c2ae">┄</div>
+    <div class="gnode" id="node-c" style="border-style:dashed; opacity:0.65"><div class="letter">C</div><div class="name">Benjamini &amp; Yekutieli</div><div class="year">2001</div></div>
+  </div>
+  <div class="graph-caption">A and B run as live code when you click below. C is real, cited, and deliberately <b>not</b> wired up — see "why one of these doesn't run" below.</div>
+
+  <div class="panel">
+    <h2>Your p-values</h2>
+    <textarea id="dataInput" rows="2">0.0001, 0.0004, 0.0012, 0.008, 0.011, 0.019, 0.021, 0.033, 0.041, 0.052, 0.078, 0.11, 0.14, 0.19, 0.24, 0.31, 0.42, 0.55, 0.71, 0.93</textarea>
+    <div class="row">
+      <button id="runBtn" disabled>Loading Python runtime…</button>
+      <span class="status loading" id="statusText">fetching Pyodide</span>
+    </div>
+  </div>
+
+  <div class="panel" id="results">
+    <h2>What just happened, in plain language</h2>
+    <div class="narrative" id="narrative"></div>
+
+    <h2>The technical result</h2>
+    <div id="resultBody"></div>
+
+    <h2 style="margin-top:22px">Invocation log — the receipt</h2>
+    <div class="ledger-intro" id="ledgerIntro"></div>
+    <div class="ledger" id="ledger"></div>
+
+    <h2 style="margin-top:22px">Why one of these citations doesn't run</h2>
+    <div class="narrative" id="whyNot" style="background:#eee9dc; border-left-color:#9aa0ab"></div>
+  </div>
+
+  <div class="fine">
+    No server received your data at any point. Source for the node functions is inline in this page's &lt;script&gt; block, inspectable via "view source."
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
+<script>
+const TERMS = {
+  pvalue: { label: "p-value", def: "A number from a statistical test that roughly says how surprising your result would be if there were actually nothing going on. Smaller usually means more surprising." },
+  multiple_testing: { label: "multiple testing", def: "The problem that comes from running many statistical tests at once: even if nothing real is happening anywhere, some tests will look significant just by chance, purely from running so many of them." },
+  fdr: { label: "false discovery rate (FDR)", def: "Of everything you call a 'discovery,' the fraction that's actually a false alarm. Controlling FDR means keeping that fraction below some chosen limit, e.g. 5%." },
+  adjusted_pvalue: { label: "adjusted p-value", def: "A p-value that's been corrected to account for the fact that you ran many tests at once, so it can be compared directly against your chosen limit (e.g. 0.05) without inflating false alarms." },
+  qvalue: { label: "q-value", def: "Similar goal to an adjusted p-value, but built differently: it estimates, for each result, the expected fraction of false discoveries among everything at least that significant." },
+  pi0: { label: "π₀ (pi-naught)", def: "The estimated proportion of your tests where nothing real is actually happening (true nulls). Storey's method uses this to make its significance calls less conservative than a method that assumes everything is null." },
+  usesMethodIn: { label: "cito:usesMethodIn", def: "A formal, published citation-type label (from the Citation Typing Ontology) meaning: this paper doesn't just mention the cited method, it actually runs it." },
+};
+
+function term(key, textOverride) {
+  const t = TERMS[key];
+  const text = textOverride || t.label;
+  return `<span class="term" data-term="${key}" onclick="toggleTerm(event, this)">${text}<span class="term-pop" id="pop-${Math.random().toString(36).slice(2)}"></span></span>`;
+}
+function toggleTerm(evt, el) {
+  evt.stopPropagation();
+  const key = el.getAttribute('data-term');
+  const pop = el.querySelector('.term-pop');
+  const alreadyOpen = pop.classList.contains('open');
+  document.querySelectorAll('.term-pop.open').forEach(p => p.classList.remove('open'));
+  if (!alreadyOpen) {
+    pop.innerHTML = `${TERMS[key].def}<span class="close-hint">tap anywhere to close</span>`;
+    pop.classList.add('open');
+  }
+}
+document.addEventListener('click', () => {
+  document.querySelectorAll('.term-pop.open').forEach(p => p.classList.remove('open'));
+});
+function renderGlossary() {
+  document.getElementById('glossaryBody').innerHTML = Object.entries(TERMS).map(([k, t]) => `
+    <div class="glossary-item"><b>${t.label}</b><div>${t.def}</div></div>
+  `).join('');
+}
+renderGlossary();
+const glossaryDialog = document.getElementById('glossaryDialog');
+document.getElementById('glossaryBtn').addEventListener('click', () => glossaryDialog.showModal());
+document.getElementById('glossaryCloseBtn').addEventListener('click', () => glossaryDialog.close());
+glossaryDialog.addEventListener('click', (e) => { if (e.target === glossaryDialog) glossaryDialog.close(); });
+
+document.getElementById('subIntro').innerHTML =
+  `Run enough statistical tests at once and some will look significant purely by chance — this is the ${term('multiple_testing')} problem, ` +
+  `and it's a real, common source of false "discoveries" in science. This page rebuilds two real papers on fixing it, thirty years apart, as a ` +
+  `<b>recomposable research prototype</b>: the later paper's method is wired to genuinely call the earlier one's method as working code, live, ` +
+  `rather than just citing it in a footnote. It also shows a third, equally real citation that <i>can't</i> be wired up this way — and explains ` +
+  `exactly why, rather than quietly leaving it out. Type in your own p-values below and watch it run. Nothing you type leaves your device.`;
+
+const PY_SOURCE = `
+import json
+
+class Registry:
+    def __init__(self):
+        self._fns = {}
+        self._cites = {}
+        self._edges = []
+    def register(self, cid, fn):
+        self._fns[cid] = fn
+    def register_cites(self, source_cid, cites):
+        self._cites[source_cid] = cites
+    def invoke(self, cid, payload, depth=0, source_fn_cid=None):
+        if depth > 3:
+            raise Exception(f"exceeded depth 3 at {cid}")
+        meta = {}
+        if source_fn_cid and source_fn_cid in self._cites:
+            meta = self._cites[source_fn_cid].get(cid, {})
+        self._edges.append({
+            "depth": depth, "source": source_fn_cid, "target": cid,
+            "edge_type": meta.get("edge_type", "unknown"),
+            "tier": meta.get("tier", -1),
+        })
+        return self._fns[cid](payload, depth)
+    def edges(self):
+        return list(self._edges)
+
+REGISTRY = Registry()
+A_CID = "bafy_benjamini_hochberg_1995_bh_v1"
+B_CID = "bafy_storey_2002_qvalue_v1"
+
+def bh_adjust(payload, depth=0):
+    pvalues = payload["pvalues"]; alpha = payload.get("alpha", 0.05)
+    m = len(pvalues)
+    indexed = sorted(range(m), key=lambda i: pvalues[i])
+    sorted_p = [pvalues[i] for i in indexed]
+    adjusted_sorted = [0.0]*m
+    adjusted_sorted[m-1] = sorted_p[m-1]
+    for k in range(m-2, -1, -1):
+        candidate = sorted_p[k]*m/(k+1)
+        adjusted_sorted[k] = min(candidate, adjusted_sorted[k+1])
+        adjusted_sorted[k] = min(adjusted_sorted[k], 1.0)
+    largest_k = -1
+    for k in range(m):
+        if sorted_p[k] <= (k+1)/m*alpha:
+            largest_k = k
+    rejected_sorted = [i <= largest_k for i in range(m)]
+    rejected = [False]*m; adjusted = [0.0]*m
+    for pos, orig_i in enumerate(indexed):
+        rejected[orig_i] = rejected_sorted[pos]
+        adjusted[orig_i] = adjusted_sorted[pos]
+    return {"rejected": rejected, "adjusted_pvalues": adjusted, "n_significant": sum(rejected)}
+
+def storey_qvalues(payload, depth=1):
+    pvalues = payload["pvalues"]; lam = payload.get("lambda_fixed", 0.9)
+    alpha_baseline = payload.get("alpha_for_baseline", 0.05)
+    m = len(pvalues)
+    bh_baseline = REGISTRY.invoke(A_CID, {"pvalues": pvalues, "alpha": alpha_baseline}, depth=depth+1, source_fn_cid=B_CID)
+    n_above = sum(1 for p in pvalues if p > lam)
+    pi0_hat = min(1.0, n_above/(m*(1-lam)))
+    indexed = sorted(range(m), key=lambda i: pvalues[i])
+    sorted_p = [pvalues[i] for i in indexed]
+    q_sorted = [0.0]*m
+    q_sorted[m-1] = min(pi0_hat*sorted_p[m-1], 1.0)
+    for k in range(m-2, -1, -1):
+        candidate = pi0_hat*m*sorted_p[k]/(k+1)
+        q_sorted[k] = min(candidate, q_sorted[k+1])
+        q_sorted[k] = min(q_sorted[k], 1.0)
+    qvalues = [0.0]*m
+    for pos, orig_i in enumerate(indexed):
+        qvalues[orig_i] = q_sorted[pos]
+    return {"qvalues": qvalues, "pi0_hat": pi0_hat,
+            "naive_bh_n_significant": bh_baseline["n_significant"],
+            "naive_bh_rejected": bh_baseline["rejected"]}
+
+REGISTRY.register(A_CID, bh_adjust)
+REGISTRY.register(B_CID, storey_qvalues)
+REGISTRY.register_cites(B_CID, {A_CID: {"edge_type": "cito:usesMethodIn", "tier": 0}})
+
+def run_chain(pvalues_list):
+    a = REGISTRY.invoke(A_CID, {"pvalues": pvalues_list, "alpha": 0.05})
+    b = storey_qvalues({"pvalues": pvalues_list, "lambda_fixed": 0.9}, depth=0)
+    from collections import Counter
+    counts = Counter((e["depth"], e["edge_type"], e["tier"], e["target"]) for e in REGISTRY.edges())
+    log_lines = [f"depth={d}  {et}  tier={t}  -> {tgt}  ({n}x)" for (d,et,t,tgt), n in sorted(counts.items())]
+    return json.dumps({"a": a, "b": b, "log": log_lines, "total": len(REGISTRY.edges())})
+`;
+
+let pyodideReady = null;
+
+async function boot() {
+  const statusEl = document.getElementById('statusText');
+  const btn = document.getElementById('runBtn');
+  console.log('[lineage] boot: fetching Pyodide runtime...');
+  try {
+    let pyodide = await loadPyodide();
+    console.log('[lineage] boot: Pyodide loaded, defining node functions...');
+    statusEl.textContent = 'running node definitions';
+    pyodide.runPython(PY_SOURCE);
+    pyodideReady = pyodide;
+    console.log('[lineage] boot: ready.');
+    statusEl.textContent = 'ready — Python running in this tab';
+    statusEl.className = 'status ready';
+    btn.disabled = false;
+    btn.textContent = 'Run the chain on your data';
+  } catch (err) {
+    console.error('[lineage] boot FAILED:', err);
+    statusEl.textContent = 'failed to load — see browser console for details';
+  }
+}
+
+async function animateGraph() {
+  const seq = [['node-a', null], ['node-b', 'arrow-ab'], ['node-a', 'arrow-ab']];
+  for (const [nodeId, arrowId] of seq) {
+    document.getElementById(nodeId).classList.add('active');
+    if (arrowId) document.getElementById(arrowId).classList.add('active');
+    await new Promise(r => setTimeout(r, 220));
+    document.getElementById(nodeId).classList.remove('active');
+    if (arrowId) document.getElementById(arrowId).classList.remove('active');
+  }
+}
+
+function runChain() {
+  const btn = document.getElementById('runBtn');
+  const raw = document.getElementById('dataInput').value;
+  const pvals = raw.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n) && n >= 0 && n <= 1);
+  if (pvals.length < 5) { alert('Need at least 5 p-values between 0 and 1, comma-separated.'); return; }
+  console.log('[lineage] run: invoking chain on', pvals.length, 'p-values');
+  btn.disabled = true;
+  btn.textContent = 'computing…';
+  animateGraph();
+
+  let r;
+  try {
+    pyodideReady.globals.set('pvals_list', pyodideReady.toPy(pvals));
+    const resultJson = pyodideReady.runPython(`run_chain(pvals_list)`);
+    r = JSON.parse(resultJson);
+    console.log('[lineage] run: chain result', r);
+  } catch (err) {
+    console.error('[lineage] run FAILED:', err);
+    alert('Computation failed — see browser console for details.');
+    btn.disabled = false; btn.textContent = 'Run again';
+    return;
+  }
+
+  document.getElementById('narrative').innerHTML = `
+    <p>Out of your ${pvals.length} tests, Benjamini &amp; Hochberg's 1995 method (adjusting for ${term('multiple_testing')} to
+    control the ${term('fdr')}) calls <b>${r.a.n_significant}</b> of them real discoveries.</p>
+    <p>Storey's 2002 method took a different approach — first estimating ${term('pi0')} = <b>${r.b.pi0_hat.toFixed(3)}</b>
+    (its guess at what fraction of your tests are truly null), then computing a ${term('qvalue')} for each result. To check its own work,
+    it also directly re-ran the 1995 method as a baseline — getting <b>${r.b.naive_bh_n_significant}</b> significant results, which should
+    exactly match Benjamini &amp; Hochberg's own number above, because it's a real call into the same code, not a guess.</p>
+  `;
+
+  document.getElementById('resultBody').innerHTML = `
+    <div class="result-node">
+      <div class="result-label">A · Benjamini &amp; Hochberg 1995</div>
+      <div class="result-line">n_significant=<b>${r.a.n_significant}</b> / ${pvals.length}</div>
+    </div>
+    <div class="result-node">
+      <div class="result-label">B · Storey 2002 — ${term('usesMethodIn')} A</div>
+      <div class="result-line">π₀=<b>${r.b.pi0_hat.toFixed(4)}</b>  naive_bh_n_significant=<b>${r.b.naive_bh_n_significant}</b></div>
+      <div class="result-why">Matches Node A's own direct-call result exactly — confirms this is a real invocation, not a coincidentally similar reimplementation.</div>
+    </div>
+  `;
+
+  document.getElementById('ledgerIntro').innerHTML = `Each line is one function call that actually happened.`;
+  document.getElementById('ledger').innerHTML =
+    `<span class="dim">invocation log</span>\n` + r.log.join('\n') + `\n<span class="dim">total invocations: ${r.total}</span>`;
+
+  document.getElementById('whyNot').innerHTML = `
+    <p><b>Benjamini &amp; Yekutieli (2001)</b> is a real, often-cited follow-up to the 1995 paper — it proves that FDR control still holds
+    even when your tests are correlated rather than independent. A paper might cite it to say "our tests are correlated, but B&amp;Y (2001)
+    proves BH still works here."</p>
+    <p>That citation can't become a live function call, and this page doesn't pretend otherwise. It's not evidence to run on data — it's a
+    citation to a mathematical <i>proof</i>. If you removed the citation, the paper's own reported numbers wouldn't change at all — only its
+    <i>argument</i> for why those numbers can be trusted under correlation would lose its support. That's the actual dividing line this whole
+    prototype runs on: a citation becomes live code only when deleting it would change a computed result. Otherwise, it stays exactly what a
+    citation has always been — a pointer to an argument, honestly labeled as such rather than forced into something it isn't.</p>
+  `;
+
+  document.getElementById('results').style.display = 'block';
+  btn.disabled = false;
+  btn.textContent = 'Run again';
+}
+
+document.getElementById('runBtn').addEventListener('click', runChain);
+boot();
+</script>
+</body>
+</html>
