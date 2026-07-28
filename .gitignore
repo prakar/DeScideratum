@@ -1,3 +1,5 @@
-resampling_knot/.DS_Store
+.DS_Store
 __pycache__/
 *.pyc
+.pytest_cache/
+*.egg-info/
