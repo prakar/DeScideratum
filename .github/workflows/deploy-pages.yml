@@ -1,0 +1,97 @@
+name: Deploy Pages
+
+# Full-site migration to CI-based deployment (2026-07). Replaces committing
+# built output (docs/bootstrap-vignette/'s 1200+ CodeMirror/thebe chunk
+# files) with a build that happens here, on GitHub's own runner, every
+# push -- generated files never touch the repo or git history again.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install mystmd
+        run: npm install -g mystmd
+
+      - name: Assemble hand-written static pages
+        run: |
+          set -e
+          mkdir -p _site
+          # Everything hand-written (index.html, the three lineage pages,
+          # any old unlinked version snapshots) copies straight across.
+          # MyST-project output folders are explicitly excluded here --
+          # they get built fresh below, never copied from a committed
+          # folder, which is the entire point of this migration.
+          for item in docs/*; do
+            name="$(basename "$item")"
+            case "$name" in
+              bootstrap-vignette) continue ;;  # rebuilt fresh below
+              *) cp -r "$item" "_site/$name" ;;
+            esac
+          done
+
+      - name: Build MyST vignettes
+        run: |
+          set -e
+
+          # Explicit source-folder -> docs-subfolder mapping. Deliberately
+          # not auto-derived from the folder name (e.g. stripping
+          # "_lineage" and swapping underscores for hyphens) -- the actual
+          # names don't follow a mechanical transform
+          # ("vignette_bootstrap_lineage" -> "bootstrap-vignette" reorders
+          # words, it isn't just punctuation) and a clever-but-wrong
+          # auto-mapping is worse than an explicit one. Add one line here
+          # per new vignette.
+          declare -A MYST_PROJECTS=(
+            ["vignette_bootstrap_lineage"]="bootstrap-vignette"
+          )
+
+          for src in "${!MYST_PROJECTS[@]}"; do
+            dest="${MYST_PROJECTS[$src]}"
+            if [ ! -f "$src/myst.yml" ]; then
+              echo "ERROR: expected $src/myst.yml, not found. Check the mapping above." >&2
+              exit 1
+            fi
+            echo "== Building $src -> docs/$dest =="
+            export BASE_URL="/DeScideratum/$dest"
+            (cd "$src" && myst build --html)
+            mkdir -p "_site/$dest"
+            cp -r "$src/_build/html/"* "_site/$dest/"
+          done
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
