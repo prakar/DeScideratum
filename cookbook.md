@@ -112,4 +112,10 @@
     this on a repo with no collaborators who've already cloned it, since
     a force-push doesn't reach copies other people already pulled.
 
-    
+# Remove and suppress MyST build from git
+
+    echo "_build/" >> .gitignore
+    git rm -r --cached vignette_bootstrap_lineage/_build
+    git add .gitignore
+    git commit -m "stop tracking MyST build output"
+    git push

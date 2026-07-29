@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Citations That Run — DeScideratum</title>
+<style>
+  :root {
+    --paper: #f7f5f0; --ink: #1c2430; --ink-soft: #4a5468; --rule: #d8d3c6;
+    --amber: #b8791f; --amber-soft: #f0e2c8; --green: #3f7a52;
+    --mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+    --serif: "Source Serif 4", "Georgia", serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); line-height: 1.55; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 24px 120px; }
+
+  header { border-bottom: 2px solid var(--ink); padding-bottom: 20px; margin-bottom: 32px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber); margin-bottom: 8px; }
+  h1 { font-size: 30px; margin: 0 0 8px; font-weight: 600; }
+  .sub { color: var(--ink-soft); font-size: 15px; max-width: 62ch; }
+
+  .graph { display: flex; align-items: stretch; gap: 0; margin: 32px 0 8px; background: #fff; border: 1px solid var(--rule); border-radius: 6px; padding: 28px 20px; }
+  .gnode { flex: 1; text-align: center; padding: 14px 10px; border-radius: 5px; border: 2px solid var(--rule); background: var(--paper); transition: all 0.25s ease; position: relative; }
+  .gnode.active { border-color: var(--amber); background: var(--amber-soft); box-shadow: 0 0 0 4px rgba(184,121,31,0.15); }
+  .gnode .letter { font-family: var(--mono); font-weight: 700; color: var(--amber); font-size: 13px; }
+  .gnode .name { font-weight: 600; font-size: 13.5px; margin-top: 4px; }
+  .gnode .year { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); }
+  .garrow { flex: 0 0 44px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--ink-soft); }
+  .garrow.active { color: var(--amber); }
+  .graph-caption { font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft); text-align: center; margin-bottom: 20px; }
+
+  /* --- tap-friendly term system --- */
+  .term { border-bottom: 1.5px dotted var(--amber); cursor: pointer; position: relative; font-weight: 600; }
+  .term:hover { background: var(--amber-soft); }
+  .term-pop {
+    display: none; position: absolute; left: 50%; top: 130%; transform: translateX(-50%);
+    background: var(--ink); color: var(--paper); font-family: var(--serif); font-size: 13px;
+    padding: 10px 13px; border-radius: 5px; width: 250px; line-height: 1.45; z-index: 50;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3); text-align: left; font-weight: 400;
+  }
+  .term-pop::before { content: ""; position: absolute; left: 50%; top: -6px; transform: translateX(-50%); border: 6px solid transparent; border-bottom-color: var(--ink); }
+  .term-pop.open { display: block; }
+  .term-pop .close-hint { display: block; margin-top: 6px; font-family: var(--mono); font-size: 10px; color: #9aa5b8; }
+
+  .glossary-toggle {
+    font-family: var(--mono); font-size: 12px; color: var(--amber); background: none; border: 1px solid var(--amber);
+    border-radius: 3px; padding: 7px 14px; cursor: pointer; margin-bottom: 24px;
+  }
+  dialog#glossaryDialog { border: 1px solid var(--rule); border-radius: 6px; padding: 0; max-width: 560px; width: 90vw; max-height: 80vh; }
+  dialog#glossaryDialog::backdrop { background: rgba(28,36,48,0.55); }
+  .glossary-head { position: sticky; top: 0; background: #fff; display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--rule); }
+  .glossary-head h2 { margin: 0; font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+  .glossary-close { font-family: var(--mono); font-size: 13px; background: none; border: none; color: var(--ink-soft); cursor: pointer; padding: 4px 8px; }
+  .glossary-body { padding: 6px 22px 20px; overflow-y: auto; }
+  .glossary-item { padding: 10px 0; border-bottom: 1px solid var(--rule); }
+  .glossary-item:last-child { border-bottom: none; }
+  .glossary-item b { font-family: var(--mono); color: var(--amber); font-size: 13.5px; }
+  .glossary-item div { font-size: 14px; margin-top: 3px; color: var(--ink-soft); }
+
+  .panel { background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 24px; margin-bottom: 24px; }
+  .panel h2 { font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin: 0 0 14px; }
+  textarea { width: 100%; font-family: var(--mono); font-size: 14px; border: 1px solid var(--rule); border-radius: 3px; padding: 10px 12px; background: var(--paper); color: var(--ink); resize: vertical; min-height: 44px; }
+  .row { display: flex; gap: 16px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+  button { font-family: var(--mono); font-size: 13px; font-weight: 600; background: var(--ink); color: var(--paper); border: none; padding: 11px 22px; border-radius: 3px; cursor: pointer; letter-spacing: 0.02em; }
+  button:disabled { background: #9aa0ab; cursor: wait; }
+  .status { font-family: var(--mono); font-size: 12.5px; color: var(--ink-soft); }
+  .status.ready::before { content: "● "; color: var(--green); }
+  .status.loading::before { content: "○ "; color: var(--amber); }
+
+  #results { display: none; }
+  .narrative { background: var(--amber-soft); border-left: 3px solid var(--amber); border-radius: 0 4px 4px 0; padding: 16px 20px; font-size: 15px; margin-bottom: 24px; }
+  .narrative p { margin: 0 0 10px; }
+  .narrative p:last-child { margin-bottom: 0; }
+
+  .result-node { padding: 16px 0; border-bottom: 1px solid var(--rule); }
+  .result-node:last-child { border-bottom: none; }
+  .result-label { font-family: var(--mono); font-size: 12px; color: var(--amber); margin-bottom: 6px; }
+  .result-line { font-family: var(--mono); font-size: 13.5px; color: var(--ink); }
+  .result-why { font-size: 13.5px; color: var(--ink-soft); margin-top: 6px; max-width: 68ch; }
+
+  .compare-row { display: grid; grid-template-columns: 150px 1fr; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .compare-label { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); text-align: right; }
+  .compare-track { position: relative; height: 26px; background: var(--paper); border: 1px solid var(--rule); border-radius: 3px; }
+  .compare-bar { position: absolute; top: 3px; bottom: 3px; border-radius: 2px; }
+  .compare-bar.naive { background: #c9c2ae; }
+  .compare-bar.bca { background: #d9ab5f; }
+  .compare-bar.calibrated { background: var(--amber); }
+  .compare-note { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); margin-top: 4px; margin-bottom: 14px; margin-left: 162px; }
+
+  .ledger-intro { font-size: 14px; color: var(--ink-soft); margin-bottom: 10px; }
+  .ledger { background: var(--ink); color: var(--amber-soft); font-family: var(--mono); font-size: 12.5px; padding: 16px 18px; border-radius: 3px; margin-top: 4px; white-space: pre-wrap; }
+  .ledger .dim { color: #8b93a3; }
+  .ledger-key { font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft); margin-top: 8px; line-height: 1.6; }
+  .ledger-key b { color: var(--ink); }
+
+  .fine { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--rule); }
+</style>
+<style>
+  .cards { display: flex; flex-direction: column; gap: 16px; margin-top: 32px; }
+  .card { display: block; text-decoration: none; color: inherit; background: #fff; border: 1px solid var(--rule); border-radius: 6px; padding: 24px; transition: border-color 0.15s ease; }
+  .card:hover { border-color: var(--amber); }
+  .card .eyebrow2 { font-family: var(--mono); font-size: 11px; color: var(--amber); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .card h2 { margin: 0 0 8px; font-size: 20px; }
+  .card p { margin: 0; color: var(--ink-soft); font-size: 14.5px; }
+  .card .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin-right: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">DeScideratum</div>
+    <h1>Citations That Run</h1>
+    <div class="sub">
+      A scientific citation is normally just a name and a year — a pointer you have to trust, or spend hours tracking down and
+      re-deriving yourself to check. This is a research prototype exploring a different way to publish and cite science: instead
+      of just referencing an earlier paper's method, a later paper's method can be rebuilt so it genuinely <b>calls</b> the earlier
+      one, live, as real working code. Citing prior work and running it become the same act. Below are two working demonstrations —
+      real, historically real papers, rebuilt this way, running entirely in your browser with nothing installed and nothing sent
+      to any server.
+    </div>
+  </header>
+
+  <div class="cards">
+    <a class="card" href="resampling-lineage/index.html">
+      <div class="eyebrow2"><span class="status-dot"></span>Lineage 1 of 3 — Live</div>
+      <h2>How Much Should You Trust an Average?</h2>
+      <p>Three statistics papers, 1979–1997, on estimating uncertainty from a small sample. Each later method genuinely calls the
+      earlier one — a real two-hop citation chain, running live on data you type in yourself.</p>
+    </a>
+    <a class="card" href="multiple-testing-lineage/index.html">
+      <div class="eyebrow2"><span class="status-dot"></span>Lineage 2 of 3 — Live</div>
+      <h2>How Many of These Discoveries Are Real?</h2>
+      <p>Two statistics papers, 1995–2002, on the problem of running many tests at once. Also shows a real, honest case where a
+      citation <i>can't</i> become live code — and explains exactly why, rather than hiding it.</p>
+    </a>
+    <a class="card" href="meta-analysis-lineage/index.html">
+      <div class="eyebrow2"><span class="status-dot"></span>Lineage 3 of 3 — Live</div>
+      <h2>What Happens When You Combine Evidence?</h2>
+      <p>Three statistics papers, 1954–2002, on pooling several studies into one honest estimate. The first demonstration where
+      every input carries its own applicability conditions — population, measurement context, known failure modes — in the open.</p>
+    </a>
+  </div>
+
+  <div class="fine">More demonstrations are planned. Each is an independent, working artifact — open one, view its source, or read its full glossary and methodology directly on the page.</div>
+</div>
+</body>
+</html>

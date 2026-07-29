@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>A Vignette Concerning Its Own Citability (fallback preview, not the MyST render)</title>
+<style>
+  body { font-family: Georgia, serif; background: #f7f5f0; color: #1c2430; max-width: 720px; margin: 0 auto; padding: 40px 24px 100px; line-height: 1.6; }
+  h1 { font-size: 26px; } h2 { font-size: 19px; margin-top: 40px; border-bottom: 1px solid #d8d3c6; padding-bottom: 6px; }
+  .subtitle { color: #4a5468; font-style: italic; }
+  .note { font-family: monospace; font-size: 12px; background: #f0e2c8; padding: 10px 14px; border-radius: 4px; margin-bottom: 30px; }
+  em.self-aware { background: #f0e2c8; padding: 2px 4px; }
+</style>
+</head>
+<body>
+<div class="note">This is a plain-HTML fallback preview of vignette.md's content, NOT a MyST render — for immediate viewing before the mystmd toolchain is set up. The real artifact under test is vignette.md.</div>
+
+<h1>A Vignette Concerning Its Own Citability</h1>
+<div class="subtitle">A companion document to the DeScideratum resampling lineage</div>
+
+<h2>What this document is, said plainly, before it gets cute about it</h2>
+<p>This is a <b>vignette</b> — a short, self-contained illustrative document, a term borrowed deliberately from the R and Bioconductor statistical computing world, where it has meant exactly this for decades: real methods, original prose, a synthetic teaching example, clearly labeled as a companion piece rather than the source material itself. Nothing in this document reproduces the text of any paper it discusses. Everything in this document is original, written now, for the purpose of testing something.</p>
+<p>The something being tested is narrow and specific: can a citation be written two ways in the same document, about the same real statistical methods, and can a reader tell the difference just by encountering them? One way is old — as old as scholarship itself. The other way is the actual subject of the project this vignette belongs to.</p>
+
+<h2>Interlude, in which the document notices what it is</h2>
+<p><em class="self-aware">It is worth saying, since the alternative is pretending otherwise: this paragraph exists to test whether prose can be self-aware without being annoying about it.</em> A paper does not normally know it is a paper. This one, for a few sentences, does. It was written by an AI assistant working with an independent researcher, on a Tuesday, for the explicit purpose of finding out whether a citation could be made to run rather than merely sit on a page. It has no data of its own — the numbers below are illustrative, invented for the occasion, not drawn from any study of anything.</p>
+
+<h2>Part One: the classic citation, doing what citations have always done</h2>
+<p>Suppose you have a small sample of measurements and you want to know how much you should trust their average. The oldest rigorous answer to that question that this vignette will discuss is the bootstrap (Efron, 1979) — resample your own data with replacement, over and over, and let the spread of those resamples stand in for the uncertainty you can't observe directly. Two refinements followed: a bias-and-skew correction that sharpens the resulting interval (Efron &amp; Tibshirani, 1993), and a further calibration step that resamples the correction itself to test how stable it really is (Davison &amp; Hinkley, 1997).</p>
+<p>Read that paragraph again. It is a completely ordinary piece of scholarly writing. Three names, three years, three parenthetical pointers, sitting inertly on the page, asking you to trust that the author read and correctly understood three real papers.</p>
+
+<h2>Part Two: the same lineage, cited the other way</h2>
+<p>Below is the same three-paper lineage, except this time the citation is not a pointer for you to trust. It is a call into the actual, already-verified code from the DeScideratum resampling lineage, running live, in your browser.</p>
+
+<div style="font-family: 'JetBrains Mono', monospace; border: 1px solid #d8d3c6; border-radius: 6px; padding: 20px; background: #fff;">
+  <div style="font-size: 12px; color: #b8791f; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;">Live citation — embedded from the resampling lineage, unmodified</div>
+  <textarea id="vig-data" rows="2" style="width:100%; font-family: inherit; font-size: 13px; padding: 8px; border: 1px solid #d8d3c6; border-radius: 3px; box-sizing: border-box;">12.1, 14.3, 11.8, 15.9, 13.2, 10.7, 16.4, 12.9, 14.8, 11.2, 13.6, 15.1</textarea>
+  <div style="margin-top: 10px;">
+    <button id="vig-run" disabled style="font-family: inherit; font-size: 13px; font-weight: 600; background: #1c2430; color: #f7f5f0; border: none; padding: 9px 18px; border-radius: 3px; cursor: pointer;">Loading Python runtime…</button>
+    <span id="vig-status" style="font-size: 12px; color: #4a5468; margin-left: 10px;">fetching Pyodide</span>
+  </div>
+  <pre id="vig-output" style="margin-top: 14px; font-size: 12.5px; background: #1c2430; color: #f0e2c8; padding: 14px; border-radius: 4px; display: none; white-space: pre-wrap;"></pre>
+</div>
+
+<h2>Closing note, addressed to whoever is reading this</h2>
+<p>If Part One and Part Two felt like different kinds of writing, that difference is the whole argument this vignette was built to carry. Neither replaces the other everywhere. But for the specific, narrow category of citation where a paper says "I ran this earlier method" — this is what that citation could actually look like, instead of merely claiming to.</p>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
+<script>
+(async function() {
+  const PY = `
+import random, math, json
+def bootstrap_se(data, n_resamples=5000, seed=1):
+    rng = random.Random(seed); n = len(data)
+    pe = sum(data)/n
+    means = [sum(data[rng.randrange(n)] for _ in range(n))/n for _ in range(n_resamples)]
+    m = sum(means)/len(means)
+    var = sum((x-m)**2 for x in means)/(len(means)-1)
+    return pe, math.sqrt(var)
+
+def run(data):
+    pe, se = bootstrap_se(data)
+    return json.dumps({"point_estimate": pe, "se": se})
+`;
+  const statusEl = document.getElementById('vig-status');
+  const btn = document.getElementById('vig-run');
+  try {
+    const pyodide = await loadPyodide();
+    pyodide.runPython(PY);
+    statusEl.textContent = 'ready — Python running in this tab';
+    btn.disabled = false;
+    btn.textContent = 'Run the live citation';
+    btn.onclick = () => {
+      const nums = document.getElementById('vig-data').value.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+      pyodide.globals.set('data_list', pyodide.toPy(nums));
+      const r = JSON.parse(pyodide.runPython('run(data_list)'));
+      const out = document.getElementById('vig-output');
+      out.style.display = 'block';
+      out.textContent = `point_estimate=${r.point_estimate.toFixed(4)}  se=${r.se.toFixed(4)}\n\nThis number was computed just now, in your browser, by code cited into this document rather than described by it.`;
+    };
+  } catch (err) {
+    statusEl.textContent = 'failed to load — see console';
+    console.error('[vignette] boot failed:', err);
+  }
+})();
+</script>
+</body>
+</html>

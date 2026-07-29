@@ -1,0 +1,13 @@
+version: 1
+project:
+  title: A Vignette Concerning Its Own Citability
+  description: >
+    A companion document to the DeScideratum resampling lineage, demonstrating
+    classic citation and live citation side by side, in the same document,
+    about the same real methods.
+  bibliography:
+    - references.bib
+  plugins:
+    - plugins/cite-invoke.mjs
+site:
+  template: book-theme
