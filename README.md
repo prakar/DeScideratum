@@ -16,6 +16,20 @@ A research prototype exploring a different way to cite scientific work: instead 
 
 Each subfolder README owns the actual detail — what each paper's method computes, why the citation between them is structural rather than stylistic, what's honestly still missing, and how the invocability rubric scores it. This file only orients; it doesn't duplicate that content; treat the subfolder READMEs as the source of truth if anything here ever looks out of date against them.
 
+## Authoring integration — a different kind of demonstration
+
+The three lineages above are hand-built HTML — proof the citation-as-invocation mechanism works. [`vignette_bootstrap_lineage/`](vignette_bootstrap_lineage/README.md) is different: it proves the mechanism works **inside an independent, existing authoring tool** rather than only inside pages this project controls end to end. Live at [`docs/bootstrap-vignette/`](docs/bootstrap-vignette/).
+
+This required building `cite-invoke`, a MyST Markdown directive that unifies `{cite}` and `{anywidget}` into one construct — citing a method and running it become the same authoring act. Confirmed working end to end via live build; no prior implementation found anywhere, including NeuroLibre, unifies MyST's citation and widget systems this way. **Released, MIT-licensed, install directly** — MyST has no central plugin registry, so this URL is the actual distribution mechanism:
+
+```yaml
+project:
+  plugins:
+    - https://github.com/prakar/DeScideratum/releases/download/v0.2.0/cite-invoke.mjs
+```
+
+Release notes: [github.com/prakar/DeScideratum/releases/tag/v0.2.0](https://github.com/prakar/DeScideratum/releases/tag/v0.2.0)
+
 ## The theory underneath the demos
 
 - **`citation_invocability_rubric_v0.1.md`** — the two-stage instrument (E1 intent / E2 portability gates, Q1/Q2 quality scores) used to decide whether a given citation can honestly become a live function call.

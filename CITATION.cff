@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "DeScideratum: Citation-as-Invocation in Scientific Publishing"
+type: software
+authors:
+  - family-names: "Karmarkar"
+    given-names: "Prasanna Varun"
+    orcid: "https://orcid.org/0009-0006-2284-6914"
+repository-code: "https://github.com/prakar/DeScideratum"
+url: "https://prakar.github.io/DeScideratum/"
+abstract: >
+  A research prototype investigating citation-as-invocation in scientific
+  publishing: whether a scientific citation can be a live, runnable function
+  call rather than a static reference. Includes three verified citation
+  lineages (resampling, multiple-testing, meta-analysis) and cite-invoke, a
+  MyST Markdown directive unifying citation and execution into a single
+  authoring construct.
+keywords:
+  - reproducibility
+  - scientific-publishing
+  - mystmd
+  - citation
+  - open-science
+  - pyodide
+license: MIT
+date-released: "2026-07-30"
+preferred-citation:
+  type: software
+  title: "cite-invoke: unifying citation and execution in MyST Markdown"
+  authors:
+    - family-names: "Karmarkar"
+      given-names: "Prasanna Varun"
+      orcid: "https://orcid.org/0009-0006-2284-6914"
+  version: "0.2.0"
+  date-released: "2026-07-29"
+  url: "https://github.com/prakar/DeScideratum/releases/tag/v0.2.0"
+  repository-code: "https://github.com/prakar/DeScideratum"
+  license: MIT
