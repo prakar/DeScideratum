@@ -2,7 +2,7 @@
 
 Where the three lineages (`resampling_lineage-source/`, `multiple_testing_lineage-source/`, `meta_analysis_lineage-source/`) prove the citation-as-invocation *mechanism* works, this folder proves it works **inside an independent, existing authoring tool** — MyST Markdown — rather than only inside hand-built HTML pages this project controls end to end.
 
-Live page: [`docs/bootstrap-vignette/`](../docs/bootstrap-vignette/) (deployed via GitHub Actions — see `.github/workflows/deploy-pages.yml`)
+Live page: [https://prakar.github.io/DeScideratum/bootstrap-vignette/](https://prakar.github.io/DeScideratum/bootstrap-vignette/) (deployed via GitHub Actions — see [`.github/workflows/deploy-pages.yml`](https://github.com/prakar/DeScideratum/blob/main/.github/workflows/deploy-pages.yml))
 Source: `vignette.md`, built and served with [mystmd](https://mystmd.org)
 
 ## What's here

@@ -1,6 +1,6 @@
 version: 1
 project:
-  title: A Vignette Concerning Its Own Citability
+  title: DeScideratum — Authoring Integration Reference
   description: >
     A companion document to the DeScideratum resampling lineage, demonstrating
     classic citation and live citation side by side, in the same document,
@@ -9,5 +9,7 @@ project:
     - references.bib
   plugins:
     - plugins/cite-invoke.mjs
+  toc:
+    - file: vignette.md
 site:
   template: book-theme
