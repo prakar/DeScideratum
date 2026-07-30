@@ -21,10 +21,10 @@ Source: `vignette.md`, built and served with [mystmd](https://mystmd.org)
 
 ## Status
 
-Released as `cite-invoke` v0.2.0 (MIT license), confirmed working end to end via live build: the directive loads, the widget computes and displays the correct result, and the citation it emits renders with the same formatting and hover behavior as an ordinary `{cite}` reference. No prior implementation — including NeuroLibre, the closest comparable MyST-based effort — has been found to unify citation and execution into a single construct this way.
+Karmarkar released `cite-invoke` v0.2.0 (MIT license) after confirming it working end to end via live build: the directive loads, the widget computes and displays the correct result, and the citation it emits renders with the same formatting and hover behavior as an ordinary `{cite}` reference. No prior implementation — including NeuroLibre, the closest comparable MyST-based effort — has been found to unify citation and execution into a single construct this way.
 
 Known limitation, not caused by this plugin: MyST's current anywidget host throws `MystAnyModel.save_changes not implemented yet` if a widget attempts two-way model sync. `bootstrap_widget.js` handles this defensively (try/catch, non-fatal, logged).
 
 ## Acknowledgments
 
-This work — including the design, implementation, and verification of the `cite-invoke` directive — was carried out through iterative human-AI collaboration between Prasanna Varun Karmarkar (ORCID: [0009-0006-2284-6914](https://orcid.org/0009-0006-2284-6914)) and Claude (Sonnet 4.6/5, Anthropic), directed and verified throughout by the author. The AI's role included source-code analysis of mystmd's public MIT-licensed repository, implementation of the directive against confirmed internals, and validation through live testing; all design decisions, verification, and final responsibility for the work rest with the author.
+Prasanna Varun Karmarkar (ORCID: [0009-0006-2284-6914](https://orcid.org/0009-0006-2284-6914)) directed the design of `cite-invoke` and verified its behavior. Claude (Sonnet 4.6/5, Anthropic) analyzed mystmd's public MIT-licensed source and implemented the directive against confirmed internals, under the author's direction; the author takes full responsibility for the design, accuracy, and integrity of this work.

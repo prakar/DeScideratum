@@ -128,10 +128,10 @@ const citeInvokeDirective = {
 
 const plugin = {
   name: 'cite-invoke',
-  // Author: Prasanna Varun Karmarkar (ORCID: 0009-0006-2284-6914).
-  // Built through human-AI collaboration -- design directed and verified
-  // by the author; implementation and mystmd source analysis assisted by
-  // Claude (Sonnet 4.6/5, Anthropic). Full disclosure in README.md.
+  // Author: Prasanna Varun Karmarkar (ORCID: 0009-0006-2284-6914), who
+  // directed the design and verified the result. Claude (Sonnet 4.6/5,
+  // Anthropic) analyzed mystmd's source and implemented the directive
+  // under that direction. Full disclosure in README.md.
   author: 'Prasanna Varun Karmarkar (ORCID: 0009-0006-2284-6914)',
   license: 'MIT',
   directives: [citeInvokeDirective],

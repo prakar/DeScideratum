@@ -35,9 +35,9 @@ Citing and running a method separately — `{cite}` in the sentence, `{anywidget
 
 ## The cite-invoke directive
 
-`{cite-invoke}` is built by extending mystmd's MIT-licensed source directly — the `{anywidget}` implementation, the type definitions governing how a directive emits AST nodes, and the tokenizer that parses `{cite}` — not inferred from documentation alone. It is confirmed working through a live build: the plugin loads, the widget computes and displays the correct result, and the citation it emits renders with the same formatting and hover behavior as an ordinary `{cite}` reference elsewhere on this page. No prior implementation, including NeuroLibre — the closest comparable MyST-based effort — unifies citation and execution into a single construct this way.
+Prasanna Varun Karmarkar (ORCID: [0009-0006-2284-6914](https://orcid.org/0009-0006-2284-6914)) directed the design of `{cite-invoke}` and verified its behavior. Claude (Sonnet 4.6/5, Anthropic) read mystmd's MIT-licensed source directly — the `{anywidget}` implementation, the type definitions governing how a directive emits AST nodes, and the tokenizer that parses `{cite}` — and implemented the directive against those confirmed internals, rather than inferring behavior from documentation alone. Karmarkar confirmed the result through a live build: the plugin loads, the widget computes and displays the correct result, and the citation it emits renders with the same formatting and hover behavior as an ordinary `{cite}` reference elsewhere on this page. No prior implementation, including NeuroLibre — the closest comparable MyST-based effort — unifies citation and execution into a single construct this way.
 
-The plugin is released under an open license as `cite-invoke`, distributed as a single dependency-free module. Install it directly from its published release — no build step, no registry:
+Karmarkar released the plugin under an open license as `cite-invoke`, distributed as a single dependency-free module. Install it directly from its published release — no build step, no registry:
 
 ```yaml
 project:
@@ -49,7 +49,7 @@ Full release notes: [github.com/prakar/DeScideratum/releases/tag/v0.2.0](https:/
 
 ## Acknowledgments
 
-This work — including the design, implementation, and verification of the `cite-invoke` directive — was carried out through iterative human-AI collaboration between Prasanna Varun Karmarkar (ORCID: [0009-0006-2284-6914](https://orcid.org/0009-0006-2284-6914)) and Claude (Sonnet 4.6/5, Anthropic), directed and verified throughout by the author. The AI's role included source-code analysis of mystmd's public MIT-licensed repository, implementation of the directive against confirmed internals, and validation through live testing; all design decisions, verification, and final responsibility for the work rest with the author.
+AI-use disclosure: Claude (Sonnet 4.6/5, Anthropic) assisted with source-code analysis and implementation as described above, under the direction and verification of the author, who takes full responsibility for the design, accuracy, and integrity of this work.
 
 ## References
 
