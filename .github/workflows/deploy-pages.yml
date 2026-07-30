@@ -46,7 +46,7 @@ jobs:
           for item in docs/*; do
             name="$(basename "$item")"
             case "$name" in
-              bootstrap-vignette) continue ;;  # rebuilt fresh below
+              bootstrap-vignette|multiple-testing-vignette|meta-analysis-vignette) continue ;;  # rebuilt fresh below
               *) cp -r "$item" "_site/$name" ;;
             esac
           done
@@ -65,6 +65,8 @@ jobs:
           # per new vignette.
           declare -A MYST_PROJECTS=(
             ["vignette_bootstrap_lineage"]="bootstrap-vignette"
+            ["vignette_multiple_testing_lineage"]="multiple-testing-vignette"
+            ["vignette_meta_analysis_lineage"]="meta-analysis-vignette"
           )
 
           for src in "${!MYST_PROJECTS[@]}"; do

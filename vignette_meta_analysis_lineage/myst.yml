@@ -1,0 +1,16 @@
+version: 1
+project:
+  title: DeScideratum — Authoring Integration Reference (Meta-Analysis)
+  description: >
+    A companion document to the DeScideratum meta-analysis lineage,
+    demonstrating whether a citation's Applicability Profile — the
+    conditions under which it's valid — survives being stated in real
+    prose rather than only a UI table.
+  bibliography:
+    - references.bib
+  plugins:
+    - https://github.com/prakar/DeScideratum/releases/download/v0.2.0/cite-invoke.mjs
+  toc:
+    - file: vignette.md
+site:
+  template: book-theme
