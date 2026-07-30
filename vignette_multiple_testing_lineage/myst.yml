@@ -1,0 +1,15 @@
+version: 1
+project:
+  title: DeScideratum — Authoring Integration Reference (Multiple-Testing)
+  description: >
+    A companion document to the DeScideratum multiple-testing lineage,
+    demonstrating a live citation and a deliberately non-invocable citation
+    side by side, in the same real narrative, using cite-invoke.
+  bibliography:
+    - references.bib
+  plugins:
+    - https://github.com/prakar/DeScideratum/releases/download/v0.2.0/cite-invoke.mjs
+  toc:
+    - file: vignette.md
+site:
+  template: book-theme
