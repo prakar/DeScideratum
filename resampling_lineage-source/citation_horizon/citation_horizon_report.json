@@ -1,0 +1,51 @@
+{
+  "artifact": "citation_horizon_report",
+  "version": "0.1",
+  "applies_to": "resampling_lineage-source (Efron 1979 -> Efron & Tibshirani 1993 -> Davison & Hinkley 1997)",
+  "purpose": "Verified classification of the citation chain upstream of Efron (1979), distinguishing three subtypes of 'sink' (a paper that cites nothing further, per established bibliometric terminology) that ordinary citation-database lookups treat as one undifferentiated case.",
+  "edges": [
+    {
+      "from": "Efron (1979), Ann. Statist. 7(1):1-26",
+      "to_commonly_asserted": "Quenouille (1949) / Tukey (1958), jointly, as 'the Quenouille-Tukey jackknife'",
+      "to_actually_cited": "Miller, R.G. (1974), 'The jackknife -- a review', Biometrika 61(1):1-15",
+      "classification": "attribution_without_citation",
+      "evidence": "Full text and reference list of Efron (1979) read directly. Seventeen references present; neither Quenouille nor Tukey appears. Every methodological pointer to the jackknife's origin routes through Miller [14]: 'Miller gives an excellent review of the subject.'",
+      "confidence": "high -- verified against primary source directly",
+      "note": "The edge asserted by hundreds of downstream papers (Efron cites Quenouille/Tukey) does not exist in the primary source. Efron's own attribution is careful, not sloppy -- he deliberately routes through the review rather than citing the originals directly."
+    },
+    {
+      "from": "Miller (1974), Biometrika 61(1):1-15",
+      "to_commonly_asserted": "Quenouille (1949, 1956), Tukey (1958)",
+      "to_actually_cited": "unconfirmed",
+      "classification": "unverified_pending_source_access",
+      "evidence": "Miller (1974) confirmed as a real paper. Its own reference list could not be extracted -- the available copy is a scanned image with no text layer. Citation of Quenouille and Tukey by Miller is attested by many secondary sources but not confirmed against the primary document itself.",
+      "confidence": "low -- flagged explicitly as unverified, not asserted as fact",
+      "note": "This edge is a real gap in verification, not filled in with a plausible assumption. Re-verify if a text-layer copy of Miller (1974) becomes accessible."
+    },
+    {
+      "from": "downstream literature (widely)",
+      "to_commonly_asserted": "Tukey (1958), pages 614-623",
+      "to_actually_cited": "Tukey (1958), page 614 only -- a one-page meeting abstract",
+      "classification": "citable_but_unverifiable_at_source",
+      "evidence": "DOI 10.1214/aoms/1177706647 resolves to a single-page abstract in Annals of Mathematical Statistics 29:614. The commonly-cited page range '614-623' does not match the item's actual pagination. The abstract itself does not contain the word 'jackknife'; substantive content survives mainly in an unpublished note later folded into Tukey's collected works.",
+      "confidence": "high -- DOI and pagination independently verifiable",
+      "note": "A separate, distinct corruption also circulates: some sources date this abstract to 1956 (per Peter Hall's introduction to the Efron reprint in Breakthroughs in Statistics), not 1958. The 1958 date matches the DOI and the official publication record."
+    },
+    {
+      "from": "Quenouille (1949), JRSS B 11(1):68-84",
+      "to_commonly_asserted": "none widely asserted -- generally treated as the jackknife's origin point",
+      "to_actually_cited": "Quenouille's own prior serial-correlation papers (1947, 1948a-d) and Rubin (1945) on the distribution of the serial correlation coefficient -- none addressing bias reduction by subsample deletion",
+      "classification": "genuine_horizon_verified",
+      "evidence": "Reference list checked directly (partial extract, not the complete page -- stated as a caveat, not smoothed over). All visible entries concern testing correlation in time series, not bias reduction. The split-half construction that becomes the jackknife enters without a cited antecedent.",
+      "confidence": "moderate-high -- verified against the available reference list, with an explicit caveat that a complete reading was not performed and 'no cited antecedent' is not proof of 'no antecedent'",
+      "note": "This is the chain's citation horizon: the trail does not thin out, it stops. Distinguished from the Tukey node (a source exists, but is limited) by the nature of the absence -- here the absence was checked and appears genuine, not merely a search that turned up nothing."
+    }
+  ],
+  "mechanically_detectable_defect": {
+    "description": "Corrupted page range for Tukey (1958), commonly cited as '614-623' when the item's actual, DOI-confirmed pagination is a single page (614).",
+    "check": "Compare a citation's claimed page span against the journal's own published pagination for that item. Requires no historical or editorial judgment -- a direct, automatable Tier-0-style verification.",
+    "status": "documented here; not yet implemented as a runnable check"
+  },
+  "methodology_note": "This report was produced by a dedicated verification pass, handed off to a higher-capability model specifically because the task is knowledge-density-bound rather than reasoning-bound: accurate recall of obscure mid-20th-century statistics bibliography, where a confident but wrong claim would be a costly, hard-to-catch error. Prasanna Karmarkar directed and reviewed the handoff; Claude synthesized and structured the findings into this artifact.",
+  "status": "Verification and evidence layer only. Does not yet include a runnable implementation of Quenouille's (1949) or Miller's (1974) own procedures -- that is separate, not-yet-started work, distinct from this citation-provenance verification."
+}
