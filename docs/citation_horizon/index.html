@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Citation Horizon — DeScideratum</title>
+<style>
+  :root {
+    --paper: #f7f5f0; --ink: #1c2430; --ink-soft: #4a5468; --rule: #d8d3c6;
+    --amber: #b8791f; --amber-soft: #f0e2c8; --green: #3f7a52; --red: #a5462f; --red-soft: #f3ded7;
+    --mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+    --serif: "Source Serif 4", "Georgia", serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); line-height: 1.55; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 24px 120px; }
+
+  header { border-bottom: 2px solid var(--ink); padding-bottom: 20px; margin-bottom: 32px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber); margin-bottom: 8px; }
+  h1 { font-size: 30px; margin: 0 0 8px; font-weight: 600; }
+  .sub { color: var(--ink-soft); font-size: 15px; max-width: 66ch; }
+  .back-link { font-family: var(--mono); font-size: 12.5px; color: var(--amber); text-decoration: none; }
+  .back-link:hover { text-decoration: underline; }
+
+  .panel { background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 24px; margin-bottom: 24px; }
+  .panel h2 { font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin: 0 0 14px; }
+
+  /* --- chain visualization --- */
+  .chain { display: flex; flex-direction: column; gap: 0; margin: 8px 0 32px; }
+  .chain-node { background: #fff; border: 2px solid var(--rule); border-radius: 6px; padding: 16px 20px; }
+  .chain-node .paper-name { font-weight: 600; font-size: 15.5px; }
+  .chain-node .paper-cite { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+  .chain-arrow { display: flex; align-items: center; gap: 12px; padding: 10px 0 10px 24px; }
+  .chain-arrow .line { flex: 0 0 2px; width: 2px; height: 28px; background: var(--rule); margin-left: 6px; }
+  .chain-arrow .badge { font-family: var(--mono); font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 4px 9px; border-radius: 3px; white-space: nowrap; }
+  .badge-attribution { background: var(--amber-soft); color: var(--amber); }
+  .badge-unverified { background: #ece9e2; color: var(--ink-soft); }
+  .badge-citable-unverifiable { background: var(--amber-soft); color: var(--amber); }
+  .badge-horizon { background: var(--red-soft); color: var(--red); }
+  .chain-node.horizon { border-color: var(--red); background: var(--red-soft); }
+  .chain-node.horizon .paper-name::after { content: " — HORIZON"; font-family: var(--mono); font-size: 11px; color: var(--red); font-weight: 700; }
+
+  /* --- evidence cards --- */
+  .edge-card { border: 1px solid var(--rule); border-radius: 5px; padding: 18px 20px; margin-bottom: 14px; background: #fff; }
+  .edge-card.unverified { background: #fafaf8; border-style: dashed; }
+  .edge-title { font-family: var(--mono); font-size: 12.5px; color: var(--ink-soft); margin-bottom: 8px; }
+  .edge-claim { font-size: 14.5px; margin-bottom: 6px; }
+  .edge-claim b { font-weight: 600; }
+  .claim-wrong { color: var(--red); text-decoration: line-through; text-decoration-color: rgba(165,70,47,0.5); }
+  .claim-right { color: var(--green); font-weight: 600; }
+  .edge-evidence { font-size: 13.5px; color: var(--ink-soft); margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--rule); }
+  .edge-confidence { font-family: var(--mono); font-size: 11px; margin-top: 8px; color: var(--ink-soft); }
+  .edge-note { font-size: 13px; color: var(--ink-soft); font-style: italic; margin-top: 8px; }
+
+  .defect-box { background: var(--amber-soft); border-left: 3px solid var(--amber); border-radius: 0 4px 4px 0; padding: 16px 20px; font-size: 14.5px; }
+
+  .fine { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--rule); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="back-link" href="../index.html">← DeScideratum</a> <span style="color:var(--rule);">/</span> <a class="back-link" href="../resampling-lineage/index.html">Resampling Lineage</a>
+    <div class="eyebrow" style="margin-top:14px;">Verification &amp; Evidence Layer</div>
+    <h1>The Citation Horizon</h1>
+    <div class="sub">
+      Every citation chain ends somewhere. This page traces the real chain upstream of the resampling lineage's own root paper,
+      Efron (1979), and classifies exactly where and how it ends — not by assuming an absence, but by checking one.
+    </div>
+  </header>
+
+  <div class="panel">
+    <h2>The chain, as actually verified</h2>
+    <div class="chain" id="chain"></div>
+    <p style="font-size:13.5px; color:var(--ink-soft); margin-top:-14px;">
+      Each arrow is annotated with what happens between the two papers it connects — not always what the literature assumes happens.
+    </p>
+  </div>
+
+  <div class="panel">
+    <h2>Four findings, one chain</h2>
+    <div id="edges"></div>
+  </div>
+
+  <div class="panel">
+    <h2>A free, mechanically detectable defect</h2>
+    <div class="defect-box" id="defect"></div>
+  </div>
+
+  <div class="fine" id="methodology"></div>
+</div>
+
+<script>
+const DATA = {
+  "edges": [
+    {
+      "from": "Efron (1979), Ann. Statist. 7(1):1-26",
+      "to_commonly_asserted": "Quenouille (1949) / Tukey (1958), jointly, as 'the Quenouille-Tukey jackknife'",
+      "to_actually_cited": "Miller, R.G. (1974), 'The jackknife -- a review', Biometrika 61(1):1-15",
+      "classification": "attribution_without_citation",
+      "classification_label": "Attribution without citation",
+      "badge_class": "badge-attribution",
+      "evidence": "Full text and reference list of Efron (1979) read directly. Seventeen references present; neither Quenouille nor Tukey appears. Every methodological pointer to the jackknife's origin routes through Miller [14]: \"Miller gives an excellent review of the subject.\"",
+      "confidence": "High — verified against primary source directly",
+      "note": "The edge asserted by hundreds of downstream papers (Efron cites Quenouille/Tukey) does not exist in the primary source. Efron's own attribution is careful, not sloppy — he deliberately routes through the review rather than citing the originals directly."
+    },
+    {
+      "from": "Miller (1974), Biometrika 61(1):1-15",
+      "to_commonly_asserted": "Quenouille (1949, 1956), Tukey (1958)",
+      "to_actually_cited": "unconfirmed",
+      "classification": "unverified_pending_source_access",
+      "classification_label": "Unverified — flagged, not assumed",
+      "badge_class": "badge-unverified",
+      "evidence": "Miller (1974) confirmed as a real paper. Its own reference list could not be extracted — the available copy is a scanned image with no text layer. Citation of Quenouille and Tukey by Miller is attested by many secondary sources but not confirmed against the primary document itself.",
+      "confidence": "Low — explicitly flagged as unverified, not asserted as fact",
+      "note": "This edge is a real gap in verification, not filled in with a plausible assumption. Re-verify if a text-layer copy of Miller (1974) becomes accessible."
+    },
+    {
+      "from": "downstream literature (widely)",
+      "to_commonly_asserted": "Tukey (1958), pages 614–623",
+      "to_actually_cited": "Tukey (1958), page 614 only — a one-page meeting abstract",
+      "classification": "citable_but_unverifiable_at_source",
+      "classification_label": "Citable, but unverifiable at source",
+      "badge_class": "badge-citable-unverifiable",
+      "evidence": "DOI 10.1214/aoms/1177706647 resolves to a single-page abstract in Annals of Mathematical Statistics 29:614. The commonly-cited page range \"614–623\" does not match the item's actual pagination. The abstract itself does not contain the word \"jackknife\"; substantive content survives mainly in an unpublished note later folded into Tukey's collected works.",
+      "confidence": "High — DOI and pagination independently verifiable",
+      "note": "A separate, distinct corruption also circulates: some sources date this abstract to 1956, not 1958. The 1958 date matches the DOI and the official publication record."
+    },
+    {
+      "from": "Quenouille (1949), JRSS B 11(1):68-84",
+      "to_commonly_asserted": "none widely asserted — generally treated as the jackknife's origin point",
+      "to_actually_cited": "Quenouille's own prior serial-correlation papers (1947, 1948a–d) and Rubin (1945) on the distribution of the serial correlation coefficient — none addressing bias reduction by subsample deletion",
+      "classification": "genuine_horizon_verified",
+      "classification_label": "Genuine horizon — verified",
+      "badge_class": "badge-horizon",
+      "evidence": "Reference list checked directly (partial extract, not the complete page — stated as a caveat, not smoothed over). All visible entries concern testing correlation in time series, not bias reduction. The split-half construction that becomes the jackknife enters without a cited antecedent.",
+      "confidence": "Moderate-high — verified against the available reference list, with an explicit caveat that a complete reading was not performed and \"no cited antecedent\" is not proof of \"no antecedent\"",
+      "note": "This is the chain's citation horizon: the trail does not thin out, it stops. Distinguished from the Tukey node (a source exists, but is limited) by the nature of the absence — here the absence was checked and appears genuine, not merely a search that turned up nothing."
+    }
+  ],
+  "defect": {
+    "description": "Corrupted page range for Tukey (1958), commonly cited as \"614–623\" when the item's actual, DOI-confirmed pagination is a single page (614).",
+    "check": "Compare a citation's claimed page span against the journal's own published pagination for that item. Requires no historical or editorial judgment — a direct, automatable Tier-0-style verification.",
+    "status": "Documented here; not yet implemented as a runnable check."
+  },
+  "methodology": "This report was produced by a dedicated verification pass, handed to a higher-capability model specifically because the task — accurate recall and verification of obscure mid-20th-century statistics bibliography — is knowledge-density-bound, where a confident but wrong claim is costly and hard to catch. Prasanna Karmarkar directed and reviewed the handoff; Claude synthesized the findings into this page. This is a verification and evidence layer: it does not include a runnable implementation of Quenouille's (1949) or Miller's (1974) own procedures as live code — that is separate, not-yet-started work."
+};
+
+const chainEl = document.getElementById('chain');
+const nodes = [
+  { name: "Efron (1979)", cite: "Ann. Statist. 7(1):1–26" },
+  { name: "Miller (1974)", cite: "Biometrika 61(1):1–15 — a review" },
+  { name: "Quenouille (1949)", cite: "JRSS B 11(1):68–84", horizon: true }
+];
+nodes.forEach((n, i) => {
+  const node = document.createElement('div');
+  node.className = 'chain-node' + (n.horizon ? ' horizon' : '');
+  node.innerHTML = `<div class="paper-name">${n.name}</div><div class="paper-cite">${n.cite}</div>`;
+  chainEl.appendChild(node);
+  if (i < nodes.length - 1) {
+    const edge = DATA.edges[i];
+    const arrow = document.createElement('div');
+    arrow.className = 'chain-arrow';
+    arrow.innerHTML = `<div class="line"></div><span class="badge ${edge.badge_class}">${edge.classification_label}</span>`;
+    chainEl.appendChild(arrow);
+  }
+});
+
+const edgesEl = document.getElementById('edges');
+DATA.edges.forEach(e => {
+  const card = document.createElement('div');
+  card.className = 'edge-card' + (e.classification === 'unverified_pending_source_access' ? ' unverified' : '');
+  card.innerHTML = `
+    <div class="edge-title">${e.from} <span class="badge ${e.badge_class}" style="margin-left:8px;">${e.classification_label}</span></div>
+    <div class="edge-claim">Commonly asserted: <span class="claim-wrong">${e.to_commonly_asserted}</span></div>
+    <div class="edge-claim">Actually verified: <span class="claim-right">${e.to_actually_cited}</span></div>
+    <div class="edge-evidence">${e.evidence}</div>
+    <div class="edge-confidence">Confidence: ${e.confidence}</div>
+    <div class="edge-note">${e.note}</div>
+  `;
+  edgesEl.appendChild(card);
+});
+
+document.getElementById('defect').innerHTML = `<b>${DATA.defect.description}</b><br><br>${DATA.defect.check}<br><br><span style="font-family:var(--mono); font-size:12px;">Status: ${DATA.defect.status}</span>`;
+document.getElementById('methodology').textContent = DATA.methodology;
+</script>
+</body>
+</html>
