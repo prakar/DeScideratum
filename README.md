@@ -30,6 +30,16 @@ project:
 
 Release notes: [github.com/prakar/DeScideratum/releases/tag/v0.2.0](https://github.com/prakar/DeScideratum/releases/tag/v0.2.0)
 
+## The citation horizon — a third kind of artifact
+
+The lineages above prove citations can run. [`resampling_lineage-source/citation_horizon/`](resampling_lineage-source/citation_horizon/README.md) traces the opposite end: real citation ancestry, checked upstream of the resampling lineage's own root paper. Live at [`docs/citation-horizon/`](docs/citation-horizon/).
+
+The finding: the widely-assumed citation from Efron (1979) to Quenouille (1949) and Tukey (1958) — repeated in hundreds of downstream papers — does not exist in Efron's actual reference list; he routes through a review article instead. A real DOI for Tukey (1958) resolves to a one-page meeting abstract, commonly cited with a fabricated page range. Quenouille (1949) is a verified genuine citation horizon — checked against its own reference list, not merely unsearched.
+
+Introduces **citation horizon** as a verification-theoretic refinement of "sink," an established bibliometric term for a paper that cites nothing further. Three subtypes are distinguished here for the first time: attribution without citation, citable-but-unverifiable-at-source, and genuine horizon — one undifferentiated case in prior bibliometric work, split into three falsifiable ones.
+
+**Scope, stated plainly:** finding this chain required a human reading primary sources directly — not anything DeScideratum's own registry or rubric currently automate. Only one finding here (a page-range defect, checkable against a journal's actual pagination) is currently mechanically verifiable without that kind of reading. The page itself states this distinction explicitly, not just this README.
+
 ## The theory underneath the demos
 
 - **`citation_invocability_rubric_v0.1.md`** — the two-stage instrument (E1 intent / E2 portability gates, Q1/Q2 quality scores) used to decide whether a given citation can honestly become a live function call.
