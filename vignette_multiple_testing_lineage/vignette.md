@@ -7,7 +7,7 @@ authors:
 date: 2026-07-30
 ---
 
-[← DeScideratum](https://prakar.github.io/DeScideratum/)
+[← DeScideratum](https://prakar.github.io/DeScideratum/) · [Full writeup on GitHub →](https://github.com/prakar/DeScideratum/blob/main/vignette_multiple_testing_lineage/README.md)
 
 ## Purpose
 
