@@ -7,6 +7,8 @@ authors:
 date: 2026-07-30
 ---
 
+[← DeScideratum](https://prakar.github.io/DeScideratum/)
+
 ## Purpose
 
 This is a vignette {cite}`leisch2002` — a short, self-contained illustrative document, real methods and original prose, a synthetic teaching example rather than any actual study's data.

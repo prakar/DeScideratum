@@ -6,6 +6,8 @@ authors:
 date: 2026-07-28
 ---
 
+[← DeScideratum](https://prakar.github.io/DeScideratum/)
+
 ## Purpose
 
 This is a vignette {cite}`leisch2002` — a short, self-contained illustrative document. The term comes from the R and Bioconductor statistical computing world: real methods, original prose, and a synthetic teaching example, identified as a companion piece rather than the source material itself. Nothing here reproduces the text of any paper under discussion; the data below is illustrative, not drawn from any actual study.
